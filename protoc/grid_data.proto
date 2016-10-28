@@ -1,0 +1,26 @@
+// Protocol Version 1
+
+package geo_learning;
+
+option optimize_for = LITE_RUNTIME;
+
+message GridData {
+        message Layer {
+                required uint32 version = 15 [ default = 1 ];
+
+                required string name = 1;
+
+                // row-col as keys
+                repeated uint32 keys = 3;
+
+                // values according to row-col keys
+                repeated float values = 4;
+
+                extensions 16 to max;
+        }
+        required string name = 1;
+
+        repeated Layer layers = 3;
+
+        extensions 16 to 8191;
+}
