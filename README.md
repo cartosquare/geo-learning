@@ -15,8 +15,12 @@ protoc -I=protoc --python_out=. protoc/grid_data.proto
 
 断点生成，流式更新。
 
+使用示例：
+```
+python feed_data.py -f 'ESRI Shapefile' -r r4 -o data --xmin 12848875.33 --xmax 13081668.22 --ymin 4785292.76 --ymax 5021316.15 -n traffic data/shp/traffic.shp
+```
 ## 格网数据的存储
-每个格网是一个protobuf的message，序列化成string后，存到lmdb中。每个图层一个lmdb。
+每个格网是一个protobuf的message，序列化成string后，存到leveldb中。每个图层一个leveldb。
 
 ## 格网数据的训练
 首先将格网数据转换为训练格式
