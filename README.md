@@ -1,5 +1,10 @@
 # GeoLearning
 
+## 依赖库
+* python 2.7
+* python packages: osgeo, sqlite3, numpy, protoc
+* [torch7](http://torch.ch/docs/getting-started.html#_) with lua 5.2
+* lua packages: [lua-pb](https://github.com/Neopallium/lua-pb), [lsqlite3](http://lua.sqlite.org/index.cgi/doc/tip/doc/lsqlite3.wiki#download)
 
 ## 生成 GridData 类定义文件
 ```
@@ -25,6 +30,10 @@ python feed_data.py -f 'ESRI Shapefile' -r r4 -o data --xmin 12848875.33 --xmax 
 ## 格网数据的训练
 首先将格网数据转换为训练格式
 
+使用示例
+```
+python fetch_data.py -l train.txt -r r2 -o data/train -f 'traffic,transport' -b 16 data
+```
 使用深度卷积神经网络进行训练
 
 ## 格网数据的可视化

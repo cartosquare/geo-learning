@@ -5,7 +5,7 @@ from osgeo import ogr
 from osgeo import gdal
 from grid import Grid
 import grid_data_pb2
-import leveldb
+import sqlite3
 import argparse
 import numpy
 gdal.UseExceptions()
@@ -36,7 +36,11 @@ if __name__=='__main__':
     
     # open leveldb
     db_path = os.path.join(output_dir, layer_name)
-    db = leveldb.LevelDB(db_path)
+    # will create if db not exists
+    db = sqlite3.connect(db_path + '.sqlite3')
+    db.execute('''CREATE TABLE IF NOT EXISTS feature
+       (ID CHAR(50) PRIMARY KEY  NOT NULL,
+       DATA           BLOB    NOT NULL);''')
 
     if band == None:
         # open vector layer
@@ -98,6 +102,8 @@ if __name__=='__main__':
     if step <= 0:
         step = 1
 
+    min = 1000000
+    max = -min
     for k in grids.grid_list:
         # protobuf format grid data
         grid_data = grid_data_pb2.GridData()
@@ -174,18 +180,25 @@ if __name__=='__main__':
                 else:
                     grid_layer.keys.append(target)
 
+                # update min/max
+                if min > grid_val:
+                    min = grid_val
+                if max < grid_val:
+                    max = grid_val
+
                 cnt = cnt + 1
                 if (cnt % step == 0):
                     print 'Processed %.2f%%' % (100 * (float(cnt) / float(total_grids)))
 
         '''
-        print len(grid_layer.values)
         cnt = 0
         for key in grid_layer.keys:
             cnt = cnt + grid_layer.values[key]
         print cnt
         '''
 
-        # save to lmdb
-        proto_str = grid_layer.SerializeToString()
-        db.Put(grid_layer.name, proto_str)
+        # save to db
+        proto_str = grid_data.SerializeToString()
+        db.execute('INSERT INTO feature(ID, DATA) VALUES(?, ?);', (grid_data.name, sqlite3.Binary(proto_str)))
+    
+    db.commit()
