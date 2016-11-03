@@ -21,7 +21,6 @@ function M.parse(arg)
     ------------ General options --------------------
    cmd:option('-trainSet',  'data/train.t7',    'Path to training dataset')
    cmd:option('-testSet',   'data/test.t7',     'Path to test dataset')
-   cmd:option('-r',   'r3',     'Can be: r1 | r2 | r3 | r4, grid resolution(meters per pixel)')
    cmd:option('-gridSize',   256,     'we store grid_size * grid_size in a grid layer')
    cmd:option('-gridList',   '',     'grid list for training')
    ------------ Fetch train test options --------------------

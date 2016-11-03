@@ -20,32 +20,55 @@ protoc -I=protoc --python_out=. protoc/grid_data.proto
 * 支持断点生成，流式更新
 
 ```
-python split_geodata.py -f 'ESRI Shapefile' -r r3 -o data -n traffic data/shp/traffic.shp
+Usage: python split_geodata.py -f -r -o -n [-b] [--xmin] [--xmax] [--ymin] [--ymax] src_file
+
+-f: 可以指定 GDAL 支持的格式，如 'ESRI Shapefile'等
+-r: 指定网格分辨率，可取的值有 r1,r2,r3,r4
+-o: 输出目录
+-n: 图层名称，同时也是输出文件的名称
+-b: 波段数，对栅格数据起作用
+--xmin,--xmax,--ymin,--ymax: 生成范围
 ```
-需要指定的参数有：数据格式、网格分辨率，输出目录，图层名称以及数据路径等
 
 
 ## 2.训练样本提取
-### 2.1 使用*select_train_test_list.py*来选择需要参加训练的格网（分为训练集和测试集）
+### 2.1 生成需要参加训练的格网列表
 ```
-python select_train_test_list.py -r r3 -o train.txt data/supermarket.sqlite3
+Usage: python select_train_test_list.py -r -o feature_db_path
+
+-r: 指定网格分辨率，可取的值有 r1,r2,r3,r4
+-o: 输出格网列表文件路径
+feature_db_path：用来判断格网是否需要进行训练的feature图层，一般为需要预测的图层
 ```
 
-### 2.2 使用*fetch_train_test_data.lua*提取上一步指定的训练和测试集数据，保存为torch7格式，方便使用torch进行训练。
-
-使用示例
+### 2.2 依据上一步指定的格网列表，从feature数据库中提取torch7格式的训练样本
 ```
-th fetch_train_test_data.lua -features 'carservice laundry' -gridList train.txt -r r2 -trainSet 'data/train.t7' -testSet 'data/test.t7'
+Usage: th fetch_train_test_data.lua -features [-featDir] -gridList [-trainSet] [-testSet] [-gridSize] [-buffer] 
+
+-features: features to train, seperated by space
+-featDir: directory that contains all the features, default is 'data/'
+-gridList: grid list for training
+-gridSize: we store grid_size * grid_size in a grid layer, default is 256
+-trainSet: path to training dataset, default is 'data/train.t7'
+-testSet: path to test dataset, default is data/test.t7
+-buffer: how many nearby grids to included when training, default is 12
 ```
 
 ## 3. 使用深度卷积神经网络进行训练
 使用torch库建立卷积神经网络模型进行训练
 ```
-th train.lua -LR 0.001 -nEpochs 50 -trainSet 'data/train.t7' -testSet 'data/test.t7'
+Usage: th train.lua [-LR] [-nEpochs] [-trainSet] [-testSet]
+
+-trainSet: path to training dataset, default is 'data/train.t7'
+-testSet: path to test dataset, default is data/test.t7
+-LR: learning rate, default is 0.1
+-nEpochs: number of epochs to run, default is 10
 ```
 
 ## 4. 格网数据的可视化
-需要有前端库可视化格网数据
+```
+Usage: python vis_feature.py -r --xmin --ymin --xmax --ymax [--gridSize] [-o] feature_db_path
+```
 
 ## 5. 格网数据服务
 格网数据未来开放为服务
