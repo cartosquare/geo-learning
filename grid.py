@@ -1,3 +1,16 @@
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ Grid
+                                 grid defination
+ general grid operations
+                              -------------------
+        begin                : 2016-11-3
+        copyright            : (C) 2016 by GeoHey
+        email                : xux@geohey.com
+ ***************************************************************************/
+"""
 class Grid:
     """Grid Class"""
     def __init__(self, res, minx, maxx, miny, maxy):

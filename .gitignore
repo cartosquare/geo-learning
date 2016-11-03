@@ -3,3 +3,5 @@ playground/
 grid_data_pb2.py
 *.txt
 *.pyc
+*.jpg
+*.zip

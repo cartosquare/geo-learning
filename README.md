@@ -12,31 +12,37 @@ protoc -I=protoc --python_out=. protoc/grid_data.proto
 ```
 
 ## 1. 格网数据生成
-给定栅格或矢量数据，自动计算其外包矩形，更新/生成格网数据。格网数据以protobuf格式组织，并存入sqlite3数据库中。
+给定栅格或矢量数据，自动计算其外包矩形，更新/生成格网数据。格网数据以 protobuf 格式组织，并存入 sqlite3 数据库中。
 
 ### 特点
-* 每种类型（即每个图层）的数据保存在一个文件中。
-* 不同图层的数据可以合并为一个文件。
-* 支持断点生成，流式更新。
+* 每种类型（即每个图层）的数据保存在一个文件中
+* 不同图层的数据可以合并为一个文件
+* 支持断点生成，流式更新
 
-使用示例：
 ```
-python split_geodata.py -f 'ESRI Shapefile' -r r4 -o data --xmin 12848875.33 --xmax 13081668.22 --ymin 4785292.76 --ymax 5021316.15 -n traffic data/shp/traffic.shp
+python split_geodata.py -f 'ESRI Shapefile' -r r3 -o data -n traffic data/shp/traffic.shp
 ```
+需要指定的参数有：数据格式、网格分辨率，输出目录，图层名称以及数据路径等
 
 
 ## 2.训练样本提取
 ### 2.1 使用*select_train_test_list.py*来选择需要参加训练的格网（分为训练集和测试集）
+```
+python select_train_test_list.py -r r3 -o train.txt data/supermarket.sqlite3
+```
 
 ### 2.2 使用*fetch_train_test_data.lua*提取上一步指定的训练和测试集数据，保存为torch7格式，方便使用torch进行训练。
 
 使用示例
 ```
-python fetch_train_test_data.lua -l train.txt -r r2 -o data/train -f 'traffic,transport' -b 16 data
+th fetch_train_test_data.lua -features 'carservice laundry' -gridList train.txt -r r2 -trainSet 'data/train.t7' -testSet 'data/test.t7'
 ```
 
 ## 3. 使用深度卷积神经网络进行训练
 使用torch库建立卷积神经网络模型进行训练
+```
+th train.lua -LR 0.001 -nEpochs 50 -trainSet 'data/train.t7' -testSet 'data/test.t7'
+```
 
 ## 4. 格网数据的可视化
 需要有前端库可视化格网数据

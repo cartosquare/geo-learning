@@ -1,4 +1,17 @@
-# coding=utf8
+# -*- coding: utf-8 -*-
+
+"""
+/***************************************************************************
+ split_geodata
+                                 data dump script
+ cut raster/vector data to grids
+                              -------------------
+        begin                : 2016-11-3
+        copyright            : (C) 2016 by GeoHey
+        email                : xux@geohey.com
+ ***************************************************************************/
+"""
+
 import os
 import sys
 from osgeo import ogr
@@ -199,6 +212,17 @@ if __name__=='__main__':
 
         # save to db
         proto_str = grid_data.SerializeToString()
-        db.execute('INSERT INTO feature(ID, DATA) VALUES(?, ?);', (grid_data.name, sqlite3.Binary(proto_str)))
-    
+
+        # check exist or not
+        print grid_data.name
+        cursor = db.execute("SELECT ID FROM feature where ID = '%s'" % grid_data.name)
+        already_exist = False
+        for row in cursor:
+            already_exist = True
+        
+        if not already_exist:
+            db.execute('INSERT INTO feature(ID, DATA) VALUES(?, ?);', (grid_data.name, sqlite3.Binary(proto_str)))
+        else:
+            db.execute('UPDATE feature SET DATA=? WHERE ID=?;', (sqlite3.Binary(proto_str), grid_data.name))
+        
     db.commit()
