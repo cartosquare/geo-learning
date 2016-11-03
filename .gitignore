@@ -5,3 +5,4 @@ grid_data_pb2.py
 *.pyc
 *.jpg
 *.zip
+*.ipynb
