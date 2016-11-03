@@ -21,6 +21,7 @@ local opt = opts.parse(arg)
 local pb = require 'pb'
 local grid_data = require 'protoc/grid_data'
 
+-- split feature names
 local features = {}
 keys = {}
 local feat_cnt = 0
@@ -29,15 +30,17 @@ for feat in string.gmatch(opt.features, "%S+") do
     features[feat_cnt] = feat
 end
 
+-- do some check
 if feat_cnt == 0 then
     print('feature name is required!')
     return
 end
 
--- open dbs
+
+-- open feature dbs
 nfeat = 0
 for k, v in ipairs(features) do
-    local db_path = 'data/' .. v .. '.sqlite3'
+    local db_path = opt.featDir .. v .. '.sqlite3'
     db = sqlite3.open(db_path)
     features[v] = db
     nfeat = nfeat + 1
@@ -49,6 +52,7 @@ samples = 0
 for line in io.lines(opt.gridList) do
     samples = samples + 1
 end
+
 -- output double tensor
 train_num = math.floor(samples * 0.6)
 test_num = samples - train_num
@@ -118,6 +122,8 @@ for line in io.lines(opt.gridList) do
             -- loop each feature
             for k, v in ipairs(features) do
                 val = 0.0
+                -- TODO: if no feature queried, for simple, here set the val to 0.
+                -- Maybe we should drop this sample?
                 for row in features[v]:nrows(string.format("SELECT DATA from feature WHERE ID = '%s'", gid)) do
                     local bin = row.DATA
                     local msg = grid_data.GridData():Parse(bin)
@@ -136,6 +142,7 @@ for line in io.lines(opt.gridList) do
                     test_data[sample_cnt - train_num][k][i + opt.buffer + 1][j + opt.buffer + 1] = val
                 end
             end -- for k, v in ipairs(features) do
+
             -- update progress
             grid_cnt = grid_cnt + 1
             if grid_cnt % step == 0 then
