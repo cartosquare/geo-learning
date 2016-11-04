@@ -1,7 +1,7 @@
 --[[
 /***************************************************************************
- fetch_train_test_data
-                                 fetch traing/testing data
+ fetch_train_test_set
+                                 fetch traing/testing set
  from grid list to torch7 data
                               -------------------
         begin                : 2016-11-3

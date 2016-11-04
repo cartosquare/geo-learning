@@ -2,7 +2,7 @@
 
 ## 依赖库
 * python 2.7
-* python packages: osgeo, sqlite3, numpy, protobuf
+* python packages: osgeo, sqlite3, numpy, protobuf, [progressbar](https://github.com/niltonvolpato/python-progressbar)
 * [torch7](http://torch.ch/docs/getting-started.html#_) with lua 5.1
 * lua packages: [lua-pb](https://github.com/Neopallium/lua-pb), [lsqlite3](http://lua.sqlite.org/index.cgi/doc/tip/doc/lsqlite3.wiki#download)
 
@@ -20,13 +20,12 @@ protoc -I=protoc --python_out=. protoc/grid_data.proto
 * 支持断点生成，流式更新
 
 ```
-Usage: python split_geodata.py -f -r -o -n [-b] [--xmin] [--xmax] [--ymin] [--ymax] src_file
+Usage: python split_geodata.py -f -r -o [-b] [--xmin] [--xmax] [--ymin] [--ymax] src_file
 
 -f: 可以指定 GDAL 支持的格式，如 'ESRI Shapefile'等
 -r: 指定网格分辨率，可取的值有 r1,r2,r3,r4
--o: 输出目录
--n: 图层名称，同时也是输出文件的名称
--b: 波段数，对栅格数据起作用
+-o: 输出路径
+-b: 图层索引。栅格数据指定波段索引。
 --xmin,--xmax,--ymin,--ymax: 生成范围
 ```
 

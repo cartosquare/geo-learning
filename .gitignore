@@ -7,3 +7,4 @@ grid_data_pb2.py
 *.jpg
 *.zip
 *.ipynb
+*.sqlite3*
