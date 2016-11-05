@@ -115,7 +115,7 @@ class Mesher:
                 pbar.update(cnt)
             # save to db
             proto_str = grid_data.SerializeToString()
-            self.feature_table.upsert(grid_data.name, proto_str)
+            self.feature_table.upsert(grid_data.name, self.resolution, proto_str)
         
         # finish, do not forget to commit
         self.feature_table.commit()
