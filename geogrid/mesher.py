@@ -97,6 +97,10 @@ class Mesher:
                     if abs(grid_val - grid_layer.values[i]) < 0.00001:
                         target = i
 
+                # make sure that grids are in the right order
+                if (find_grid['idx'] != len(grid_layer.keys)):
+                    print 'grids index are broken!'
+
                 # add small grid value to grid layer
                 if target == -1:
                     # if not recorded, we should record the key and value

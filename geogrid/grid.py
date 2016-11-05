@@ -4,27 +4,51 @@
 /***************************************************************************
  Grid
                                  grid defination
- general grid operations
+ general grid defination and related operations
                               -------------------
         begin                : 2016-11-3
         copyright            : (C) 2016 by GeoHey
         email                : xux@geohey.com
  ***************************************************************************/
+ We split raster/vector data into small grids. 
+ To efficient organize these small grids, we merge small grids into big grids. 
+ We use google's protobuf format to define big grids, which is called GridData, you can refere protoc/grid_data.protoc for detail.
+
+ This class define the spatial info and spatial operations(including giving an extent, calculate how many big grids and small grids within it)
+
+The most important spatial info about Grid is grid resolution and grid size,
+grid resolution means how many meters a small grid represent, and grid size defines how many small grid(in width and height) a big grid contains
 """
+
 class Grid:
     """Grid Class"""
     def __init__(self, res, minx, maxx, miny, maxy):
+        # how many small grids a big grid contains(along width/height)?
         self.grid_size = 256
+        # resolution align names
         self.res_map = {
-            'r1': 305.748113140625,
-            'r2': 38.21851414257813,
-            'r3': 4.777314267822266,
-            'r4': 0.597164283477783
+            # following resolutions can match to web map's resolutions
+            # for example, in web map level 18, the extent of a tile is 152.8740565703125 meters
+            'web15': 1222.9924525625,
+            'web16': 611.49622628125,
+            'web17': 305.748113140625,
+            'web18': 152.8740565703125,
+            'web19': 76.437028285156352,
+
+            # following resolutions is some general resolutions
+            'r100': 100,
+            'r150': 150,
+            'r200': 200,
+            'r250': 250,
+            'r500': 500,
+            'r1000': 1000
         }
+
+        # world original in mercator projection
         self.world_originalx = -20037508.342787
         self.world_originaly = 20037508.342787
 
-        self.res = self.res_map[res] * self.grid_size
+        self.res = self.res_map[res]
         self.extent = self.res * self.grid_size
         self.minx = minx
         self.maxx = maxx
@@ -67,7 +91,7 @@ class Grid:
                 xx = ext[0] + row * self.res
                 yy = ext[3] - col * self.res
                 extent = [xx, xx + self.res, yy - self.res, yy]
-                grid = {'row': row, 'col': col, 'extent': extent}
+                grid = {'idx': row * self.grid_size + col, 'extent': extent}
                 fine_grids.append(grid)
     
         return fine_grids
