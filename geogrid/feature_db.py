@@ -15,7 +15,7 @@ import sqlite3
 
 
 class FeatureDB:
-    """Grid Class"""
+    """FeatureDB Class"""
     def __init__(self, path):
         self.db = sqlite3.connect(path)
 

@@ -86,40 +86,29 @@ class Mesher:
             grid_layer.version = 2
             grid_layer.name = self.layer.name
 
-            ext = self.grids.grid_list[k]
             count = 0
-            # a grid contains grid.grid_size * grid.grid_size small grids
-            # we should fill these small grids
-            for row in range(0, self.grids.grid_size):
-                for col in range(0, self.grids.grid_size):
-                    # calculate small grid extent
-                    xx = ext[0] + row * self.grids.res
-                    yy = ext[3] - col * self.grids.res
-                    extent = [xx, xx + self.grids.res, yy - self.grids.res, yy]
+            for find_grid in self.grids.fine_grid(k):
+                # do statistic of this small grid
+                grid_val = self.layer.statistic(find_grid['extent'])
 
-                    # do statistic of this small grid
-                    grid_val = self.layer.statistic(extent)
+                # find whether this grid value is already recorded
+                target = -1
+                for i in range(0, len(grid_layer.values)):
+                    if abs(grid_val - grid_layer.values[i]) < 0.00001:
+                        target = i
 
-                    # find whether this grid value is already recorded
-                    target = -1
-                    for i in range(0, len(grid_layer.values)):
-                        if abs(grid_val - grid_layer.values[i]) < 0.00001:
-                            target = i
+                # add small grid value to grid layer
+                if target == -1:
+                    # if not recorded, we should record the key and value
+                    grid_layer.keys.append(len(grid_layer.values))
+                    grid_layer.values.append(grid_val)
+                else:
+                    # if already recorded, only add the key to save space
+                    grid_layer.keys.append(target)
 
-                    # add small grid value to grid layer
-                    if target == -1:
-                        # if not recorded, we should record the key and value
-                        grid_layer.keys.append(len(grid_layer.values))
-                        grid_layer.values.append(grid_val)
-                    else:
-                        # if already recorded, only add the key to save space
-                        grid_layer.keys.append(target)
-
-                    # update progress bar
-                    cnt = cnt + 1
-                    pbar.update(cnt)
-                        
-
+                # update progress bar
+                cnt = cnt + 1
+                pbar.update(cnt)
             # save to db
             proto_str = grid_data.SerializeToString()
             self.feature_table.upsert(grid_data.name, proto_str)

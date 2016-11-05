@@ -56,14 +56,18 @@ class Grid:
 
         return self.grid_list
 
-    def fine_grid(self, x0, y0):
+    def fine_grid(self, k):
         fine_grids = []
+        ext = self.grid_list[k]
+
+        # a grid contains grid.grid_size * grid.grid_size small grids
         for row in range(0, self.grid_size):
-            fine_grids[row] = []
             for col in range(0, self.grid_size):
-                xx = x0 + row * self.res
-                yy = y0 - col * self.res
-
-                fine_grids[row][col] = [xx, xx + self.res, yy, yy - self.res]
-
+                # calculate small grid extent
+                xx = ext[0] + row * self.res
+                yy = ext[3] - col * self.res
+                extent = [xx, xx + self.res, yy - self.res, yy]
+                grid = {'row': row, 'col': col, 'extent': extent}
+                fine_grids.append(grid)
+    
         return fine_grids
