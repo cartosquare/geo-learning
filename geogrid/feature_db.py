@@ -40,14 +40,22 @@ class FeatureDB:
         else:
             self.db.execute('UPDATE feature SET DATA=? WHERE ID=?;', (sqlite3.Binary(data), id))
 
+
     def queryAll(self):
         self.cursor = self.db.execute("SELECT ID, DATA from feature")
+
 
     def queryByResolution(self, res):
         self.cursor = self.db.execute("SELECT ID, DATA from feature where RES = '%s'" % res)
 
+
+    def queryByID(self, id):
+        self.cursor = self.db.execute("SELECT ID, DATA from feature WHERE ID = '%s'" % (id))
+        return self.nextRow()
+
     def nextRow(self):
         return self.cursor.fetchone()
         
+
     def commit(self):
         self.db.commit()

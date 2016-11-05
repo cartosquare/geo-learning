@@ -86,7 +86,6 @@ class Mesher:
             grid_layer.version = 2
             grid_layer.name = self.layer.name
 
-            count = 0
             for find_grid in self.grids.fine_grid(k):
                 # do statistic of this small grid
                 grid_val = self.layer.statistic(find_grid['extent'])

@@ -29,6 +29,9 @@ class Grid:
         self.res_map = {
             # following resolutions can match to web map's resolutions
             # for example, in web map level 18, the extent of a tile is 152.8740565703125 meters
+            'web12': 9783.9396205,
+            'web13': 4891.96981025,
+            'web14': 2445.984905125,
             'web15': 1222.9924525625,
             'web16': 611.49622628125,
             'web17': 305.748113140625,
@@ -55,18 +58,17 @@ class Grid:
         self.miny = miny
         self.maxy = maxy
 
-        self.count()
+        self.update_boundary()
         self.grids()
 
-    def count(self):
+    def update_boundary(self):
         self.min_ix = int((self.minx - self.world_originalx) / self.extent)
         self.min_iy = int((self.world_originaly - self.maxy) / self.extent)
 
         self.max_ix = int((self.maxx - self.world_originalx) / self.extent)
         self.max_iy = int((self.world_originaly - self.miny) / self.extent)
-    
-        self.total_grids = (self.max_ix - self.min_ix + 1) * (self.max_iy - self.min_iy + 1)
 
+        self.total_grids = (self.max_ix - self.min_ix + 1) * (self.max_iy - self.min_iy + 1)
         return self.total_grids
 
     def grids(self):
@@ -79,12 +81,28 @@ class Grid:
                 self.grid_list[key] = [x0, x0 + self.extent, y0 - self.extent, y0]
 
         return self.grid_list
+    
+
+    def grid_origin_index(self):
+        minx = 100000000
+        miny = minx
+        for k in self.grid_list:
+            x, y = k.split('-')
+            x = int(x)
+            y = int(y)
+            if x < minx:
+                minx = x
+            if y < miny:
+                miny = y
+        return minx, miny
+
 
     def fine_grid(self, k):
         fine_grids = []
         ext = self.grid_list[k]
 
         # a grid contains grid.grid_size * grid.grid_size small grids
+        # list small girds in col-major(because column index changes first)
         for row in range(0, self.grid_size):
             for col in range(0, self.grid_size):
                 # calculate small grid extent

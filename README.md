@@ -13,6 +13,7 @@ protoc -I=protoc --python_out=. protoc/grid_data.proto
 
 ## 1. 格网数据生成
 给定栅格或矢量数据，自动计算其外包矩形，更新/生成格网数据。格网数据以 protobuf 格式组织，并存入 sqlite3 数据库中。
+在生成Shapefile格式数据的格网时，最好先在QGIS里生成空间索引。
 
 ### 特点
 * 每种类型（即每个图层）的数据保存在一个文件中
