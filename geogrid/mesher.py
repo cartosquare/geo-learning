@@ -60,9 +60,6 @@ class Mesher:
         # open feature db, will create if not exist
         self.feature_table = FeatureDB(path)
 
-        # create table if not exists
-        self.feature_table.createTable()
-
         self.open_dest_success = True
         return self.open_dest_success
 
@@ -71,6 +68,14 @@ class Mesher:
             print('please open src and dest data first!')
             return False
 
+        # write metas 
+        self.feature_table.upsertMeta('minx', self.extent[0])
+        self.feature_table.upsertMeta('maxx', self.extent[1])
+        self.feature_table.upsertMeta('miny', self.extent[2])
+        self.feature_table.upsertMeta('maxy', self.extent[3])
+        date=datetime.datetime.now()
+        self.feature_table.upsertMeta('last_modified', date.strftime("%Y-%m-%d %H:%M:%S"))
+        
         # use a progress bar to show the progress of generating grids
         cnt = 0 
         # widgets = [Percentage(), Bar('>'), ' ', Timer(), BouncingBar(), ETA(), ' ', ReverseBar('<')]

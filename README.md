@@ -23,11 +23,11 @@ protoc -I=protoc --python_out=. protoc/grid_data.proto
 ```
 Usage: python split_geodata.py -f -r -o [-b] [--xmin] [--xmax] [--ymin] [--ymax] src_file
 
--f: 可以指定 GDAL 支持的格式，如 'ESRI Shapefile'等
--r: 指定网格分辨率，可取的值有 r1,r2,r3,r4
+-f: 可以指定 GDAL 支持的格式，如 'ESRI Shapefile'，'GeoTiff' 等
+-r: 指定网格分辨率的别名，可以为 web12, web13, ..., web18, r100, r150, r1000等，具体请参见 grid.py 中的定义
 -o: 输出路径
--b: 图层索引。栅格数据指定波段索引。
---xmin,--xmax,--ymin,--ymax: 生成范围
+-b: 图层索引，栅格数据指定波段索引
+--xmin,--xmax,--ymin,--ymax: 生成范围，默认为原始数据的范围
 ```
 
 
@@ -36,7 +36,7 @@ Usage: python split_geodata.py -f -r -o [-b] [--xmin] [--xmax] [--ymin] [--ymax]
 ```
 Usage: python select_train_test_list.py -r -o feature_db_path
 
--r: 指定网格分辨率，可取的值有 r1,r2,r3,r4
+-r: 指定网格分辨率，指定网格分辨率的别名，可以为 web12, web13, ..., web18, r100, r150, r1000等，具体请参见 grid.py 中的定义
 -o: 输出格网列表文件路径
 feature_db_path：用来判断格网是否需要进行训练的feature图层，一般为需要预测的图层
 ```
@@ -67,7 +67,11 @@ Usage: th train.lua [-LR] [-nEpochs] [-trainSet] [-testSet]
 
 ## 4. 格网数据的可视化
 ```
-Usage: python vis_feature.py -r --xmin --ymin --xmax --ymax [--gridSize] [-o] feature_db_path
+Usage: python vis_feature.py -r  [-o] feature_db_path
+
+-r: 指定网格分辨率，指定网格分辨率的别名，可以为 web12, web13, ..., web18, r100, r150, r1000等，具体请参见 grid.py 中的定义
+-o: 输出图片的路径
+feature_db_path：需要可视化的 feature db 路径
 ```
 
 ## 5. 格网数据服务

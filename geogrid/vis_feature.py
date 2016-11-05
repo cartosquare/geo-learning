@@ -25,10 +25,6 @@ if __name__=='__main__':
     parser.add_argument('db', metavar='db', type=str, help='source data file to read')
     parser.add_argument('-o', dest='output', type=str, help='output image file')
     parser.add_argument('-r', dest='resolution', type=str, help='resolution')
-    parser.add_argument('--xmin', dest='xmin', type=float, help="x min")
-    parser.add_argument('--xmax', dest='xmax', type=float, help="x max")
-    parser.add_argument('--ymin', dest='ymin', type=float, help="y min")
-    parser.add_argument('--ymax', dest='ymax', type=float, help="y max")
 
     # parse arguments
     args = parser.parse_args()
@@ -39,9 +35,11 @@ if __name__=='__main__':
         exit(0)
 
     feature_db = FeatureDB(args.db)
-
+    extent = feature_db.queryExtent()
+    print 'extent(minx, maxx, miny, maxy)', extent
+    
     # grid arrangement is col-major
-    grids = Grid(args.resolution, args.xmin, args.xmax, args.ymin, args.ymax)
+    grids = Grid(args.resolution, extent[0], extent[1], extent[2], extent[3])
     height = (grids.max_ix - grids.min_ix + 1) * grids.grid_size
     width = (grids.max_iy - grids.min_iy + 1) * grids.grid_size
 
