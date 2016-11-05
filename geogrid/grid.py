@@ -11,13 +11,13 @@
         email                : xux@geohey.com
  ***************************************************************************/
  We split raster/vector data into small grids. 
- To efficient organize these small grids, we merge small grids into big grids. 
+ To efficiently organize these small grids, we merge small grids into big grids. 
  We use google's protobuf format to define big grids, which is called GridData, you can refere protoc/grid_data.protoc for detail.
 
- This class define the spatial info and spatial operations(including giving an extent, calculate how many big grids and small grids within it)
+ This class defines the spatial info and spatial operations(including giving an extent, calculating how many big grids and small grids within it)
 
 The most important spatial info about Grid is grid resolution and grid size,
-grid resolution means how many meters a small grid represent, and grid size defines how many small grid(in width and height) a big grid contains
+grid resolution means how many meters a small grid represents, and grid size defines how many small grid(along width and height) a big grid contains.
 """
 
 class Grid:
