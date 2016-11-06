@@ -95,24 +95,28 @@ class Mesher:
                 # do statistic of this small grid
                 grid_val = self.layer.statistic(find_grid['extent'])
 
-                # find whether this grid value is already recorded
-                target = -1
-                for i in range(0, len(grid_layer.values)):
-                    if abs(grid_val - grid_layer.values[i]) < 0.00001:
-                        target = i
-
-                # make sure that grids are in the right order
-                if (find_grid['idx'] != len(grid_layer.keys)):
-                    print 'grids index are broken!'
-
-                # add small grid value to grid layer
-                if target == -1:
-                    # if not recorded, we should record the key and value
-                    grid_layer.keys.append(len(grid_layer.values))
-                    grid_layer.values.append(grid_val)
+                if grid_val is None:
+                    # this grid has no data, indicate that it's not calculated
+                    grid_layer.keys.append(-1)
                 else:
-                    # if already recorded, only add the key to save space
-                    grid_layer.keys.append(target)
+                    # find whether this grid value is already recorded
+                    target = -1
+                    for i in range(0, len(grid_layer.values)):
+                        if abs(grid_val - grid_layer.values[i]) < 0.00001:
+                            target = i
+
+                    # make sure that grids are in the right order
+                    if (find_grid['idx'] != len(grid_layer.keys)):
+                        print 'grids index are broken!'
+
+                    # add small grid value to grid layer
+                    if target == -1:
+                        # if not recorded, we should record the key and value
+                        grid_layer.keys.append(len(grid_layer.values))
+                        grid_layer.values.append(grid_val)
+                    else:
+                        # if already recorded, only add the key to save space
+                        grid_layer.keys.append(target)
 
                 # update progress bar
                 cnt = cnt + 1

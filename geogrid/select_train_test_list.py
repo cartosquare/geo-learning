@@ -50,14 +50,15 @@ if __name__=='__main__':
         layer = griddata.layers[0]
         for i in range(0, len(layer.keys)):
             idx = layer.keys[i]
-            if layer.values[idx] > 0:
-                row = i / 256
-                col = i % 256
+            if idx != -1: # some grid may not be recorded
+                if layer.values[idx] > 0:
+                    row = i / 256
+                    col = i % 256
 
-                data.append({'z': z, 'x': x, 'y': y, 'row': row, 'col': col, 'val': layer.values[idx]})
-                idx_list.append(cnt)
+                    data.append({'z': z, 'x': x, 'y': y, 'row': row, 'col': col, 'val': layer.values[idx]})
+                    idx_list.append(cnt)
 
-                cnt = cnt + 1
+            cnt = cnt + 1
             pbar.update(cnt)
         # next row
         row = feature_db.nextRow()

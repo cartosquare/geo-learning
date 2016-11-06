@@ -65,11 +65,12 @@ class FeatureDB:
         else:
             self.db.execute('UPDATE metas SET VALUE=? WHERE TAG=?;', (str(value), tag))
 
-
+    # After this, call getRow() to get results
     def queryAll(self):
         self.cursor = self.db.execute("SELECT ID, DATA from feature")
 
-
+    
+    # After this, call getRow() to get results
     def queryByResolution(self, res):
         self.cursor = self.db.execute("SELECT ID, DATA from feature where RES = '%s'" % res)
 

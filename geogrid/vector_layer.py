@@ -56,7 +56,11 @@ class VectorLayer:
     def spatialQuery(self, extent):
         if not self.success:
             print('layer is not opened correctly')
-            return
+            return None
+
+        # avoid nonsense query
+        if extent[0] > self.extent[1] or extent[1] < self.extent[0] or extent[2] > self.extent[3] or extent[3] < self.extent[2]:
+            return None
 
         ring = ogr.Geometry(ogr.wkbLinearRing)
         ring.AddPoint(extent[0],extent[2])
@@ -69,29 +73,32 @@ class VectorLayer:
 
         self.layer.SetSpatialFilter(None)
         self.layer.SetSpatialFilter(poly)
-
+        return self.layer
 
     def statistic(self, extent):
         if not self.success:
             print('layer is not opened correctly')
             return
 
-        self.spatialQuery(extent)
+        data = self.spatialQuery(extent)
+        if data is None:
+            # extent has no intersection with this data, return right now
+            return None
+        else:
+            grid_val = 0
+            # calculate count/length/area/.../ of the features in filtered layer
+            for feature in data:
+                geom = feature.geometry()
+                geometry_type = geom.GetGeometryType()
 
-        grid_val = 0
-        # calculate count/length/area/.../ of the features in filtered layer
-        for feature in self.layer:
-            geom = feature.geometry()
-            geometry_type = geom.GetGeometryType()
-
-            if geometry_type == ogr.wkbPoint or geometry_type == ogr.wkbMultiPoint:
-                grid_val = grid_val + 1
-            elif geometry_type == ogr.wkbLineString or geometry_type == ogr.wkbMultiLineString:
-                grid_val = grid_val + geom.Length()
-            elif geometry_type == ogr.wkbPolygon or geometry_type == ogr.wkbMultiPolygon:
-                grid_val = grid_val + geom.GetArea()
-            else:
-                print 'unknow geometry type: %s' % (geometry_type)
-        return grid_val
+                if geometry_type == ogr.wkbPoint or geometry_type == ogr.wkbMultiPoint:
+                    grid_val = grid_val + 1
+                elif geometry_type == ogr.wkbLineString or geometry_type == ogr.wkbMultiLineString:
+                    grid_val = grid_val + geom.Length()
+                elif geometry_type == ogr.wkbPolygon or geometry_type == ogr.wkbMultiPolygon:
+                    grid_val = grid_val + geom.GetArea()
+                else:
+                    print 'unknow geometry type: %s' % (geometry_type)
+            return grid_val
 
     

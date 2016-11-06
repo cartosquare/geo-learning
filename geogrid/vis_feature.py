@@ -37,7 +37,7 @@ if __name__=='__main__':
     feature_db = FeatureDB(args.db)
     extent = feature_db.queryExtent()
     print 'extent(minx, maxx, miny, maxy)', extent
-    
+
     # grid arrangement is col-major
     grids = Grid(args.resolution, extent[0], extent[1], extent[2], extent[3])
     height = (grids.max_ix - grids.min_ix + 1) * grids.grid_size
@@ -48,7 +48,7 @@ if __name__=='__main__':
 
     # find top-left grid Index
     minx, miny = grids.grid_origin_index()
-    print('minx, miny', minx, miny)
+    # print('minx, miny', minx, miny)
 
     pmin = 1000000
     pmax = -pmin
@@ -70,6 +70,9 @@ if __name__=='__main__':
             for xx in range(0, grids.grid_size):
                 for yy in range(0, grids.grid_size):
                     idx = layer.keys[xx * grids.grid_size + yy]
+                    if idx == -1:
+                        continue
+                        
                     val = layer.values[idx]
                     if val > 0:
                         # rearrange to row-major
