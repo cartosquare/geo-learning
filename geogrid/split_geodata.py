@@ -23,6 +23,8 @@ def parse_commandline():
     parser.add_argument('-r', dest='resolution', type=str, help='resolution r1-r4')
     parser.add_argument('-o', dest='output', type=str, help='output directory')
     parser.add_argument('-b', dest='ilayer', type=int, help='data layer index')
+    parser.add_argument('-m', dest='method', type=str, help='method to get grid value')
+    parser.add_argument('-v', dest='cell_value', type=int, help='raster method operator')
     parser.add_argument('--xmin', dest='xmin', type=float, help="x min")
     parser.add_argument('--xmax', dest='xmax', type=float, help="x max")
     parser.add_argument('--ymin', dest='ymin', type=float, help="y min")
@@ -55,6 +57,13 @@ def parse_commandline():
     if args.ilayer is None and args.type == 'raster':
         args.ilayer = 1
 
+    if args.method is None:
+        args.method = 'count'
+
+    if (args.method == 'count' or args.method == 'frequency') and args.cell_value is None:
+        print 'You must specify -v option when using %s method!' % (args.method)
+        return args, False
+
     return args, True
 
 if __name__=='__main__':
@@ -69,7 +78,8 @@ if __name__=='__main__':
         exit(0)
     if not mesher.openDest(args.output):
         exit(0)
-    mesher.make()
+
+    mesher.make(args.method, args.cell_value)
 
     
 

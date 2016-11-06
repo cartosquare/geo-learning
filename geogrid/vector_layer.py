@@ -75,7 +75,7 @@ class VectorLayer:
         self.layer.SetSpatialFilter(poly)
         return self.layer
 
-    def statistic(self, extent):
+    def statistic(self, extent, method, user_data):
         if not self.success:
             print('layer is not opened correctly')
             return

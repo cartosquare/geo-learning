@@ -50,7 +50,7 @@ if __name__=='__main__':
         layer = griddata.layers[0]
         for i in range(0, len(layer.keys)):
             idx = layer.keys[i]
-            if idx != -1: # some grid may not be recorded
+            if idx < len(layer.values): # some grid may not be recorded
                 if layer.values[idx] > 0:
                     row = i / 256
                     col = i % 256

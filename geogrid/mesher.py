@@ -63,7 +63,7 @@ class Mesher:
         self.open_dest_success = True
         return self.open_dest_success
 
-    def make(self):
+    def make(self, method, user_data):
         if not self.open_src_success or not self.open_dest_success:
             print('please open src and dest data first!')
             return False
@@ -93,11 +93,13 @@ class Mesher:
 
             for find_grid in self.grids.fine_grid(k):
                 # do statistic of this small grid
-                grid_val = self.layer.statistic(find_grid['extent'])
+                grid_val = self.layer.statistic(find_grid['extent'], method, user_data)
 
                 if grid_val is None:
                     # this grid has no data, indicate that it's not calculated
-                    grid_layer.keys.append(-1)
+                    # because we have at most self.grids.grid_size * self.grids.grid_size small grids in
+                    # a big grid, the index to value could not exceed self.grids.grid_size * self.grids.grid_size - 1, here we use self.grids.max_val_index = self.grids.grid_size * self.grids.grid_size to represent that this grid has no data
+                    grid_layer.keys.append(self.grids.max_val_index + 1)
                 else:
                     # find whether this grid value is already recorded
                     target = -1

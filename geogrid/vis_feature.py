@@ -70,9 +70,9 @@ if __name__=='__main__':
             for xx in range(0, grids.grid_size):
                 for yy in range(0, grids.grid_size):
                     idx = layer.keys[xx * grids.grid_size + yy]
-                    if idx == -1:
+                    if idx > grids.max_val_index:
                         continue
-                        
+
                     val = layer.values[idx]
                     if val > 0:
                         # rearrange to row-major

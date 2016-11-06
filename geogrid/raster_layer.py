@@ -69,19 +69,31 @@ class RasterLayer:
         # skip nonsense queries
         if x_offset >= self.datasource.RasterXSize or y_offset >= self.datasource.RasterYSize:
             return None
+        if x_offset + x_size < 0 or y_offset + y_size < 0:
+            return None
 
         # limit query extent to the datasource extent
+        # TODO: When raster data are feed in as many seperated files,
+        # the values of grids lies on the boundary may not accuracy!
+        # you can merge seperated files into larger one to avoid this issue,
+        # but programming methods should be taken to deal with it!!!
         if x_offset + x_size > self.datasource.RasterXSize:
             x_size = self.datasource.RasterXSize - x_offset
 
         if y_offset + y_size > self.datasource.RasterYSize:
             y_size = self.datasource.RasterYSize - y_offset
 
+        if x_offset < 0:
+            x_offset = 0
+
+        if y_offset < 0:
+            y_offset = 0
+
         # then, query
         data = self.layer.ReadAsArray(x_offset, y_offset, x_size, y_size)
         return data
 
-    def statistic(self, extent):
+    def statistic(self, extent, method, user_data):
         if not self.success:
             print('layer is not opened correctly')
             return
@@ -89,7 +101,51 @@ class RasterLayer:
         data = self.spatialQuery(extent)
         if data is None:
             return None
+        
+        if method == 'sum':
+            return self.sum(data)
+        elif method == 'average':
+            return self.average(data)
+        elif method == 'count':
+            return self.count(data, user_data)
+        elif method == 'frequency':
+            return self.frequency(data, user_data)
         else:
-            data = data.astype(numpy.float)
-            grid_val = numpy.average(data)
+            print 'unsupport method %s' % (method)
+            return None
+    
+
+    # average of all cell values
+    def average(self, data):
+        data = data.astype(numpy.float)
+        grid_val = numpy.average(data)
         return grid_val
+    
+
+    # sum of all cell values
+    def sum(self, data):
+        data = data.astype(numpy.float)
+        grid_val = numpy.sum(data)
+        return grid_val
+
+
+    # appear times of specified cell value
+    def count(self, data, val):
+        data = data.astype(numpy.int)
+        (row, col) = data.shape
+
+        grid_val = 0
+        for i in range(0, row):
+            for j in range(0, col):
+                if data[i][j] == val:
+                    grid_val = grid_val + 1
+
+        return grid_val
+    
+
+    # appear times divide total times of specified cell value
+    def frequency(self, data, val):
+        grid_val = float(self.count(data, val))
+        total_val = data.shape[0] * data.shape[1]
+
+        return (grid_val / total_val)
