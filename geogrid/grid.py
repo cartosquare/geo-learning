@@ -26,7 +26,7 @@ class Grid:
         # how many small grids a big grid contains(along width/height)?
         self.grid_size = 256
         self.max_val_index = self.grid_size * self.grid_size - 1
-        
+
         # resolution align names
         self.res_map = {
             # following resolutions can match to web map's resolutions
@@ -46,7 +46,8 @@ class Grid:
             'r200': 200,
             'r250': 250,
             'r500': 500,
-            'r1000': 1000
+            'r1000': 1000,
+            'r10000': 10000
         }
 
         # world original in mercator projection
