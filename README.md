@@ -21,12 +21,15 @@ protoc -I=protoc --python_out=. protoc/grid_data.proto
 * 支持断点生成，流式更新
 
 ```
-Usage: python split_geodata.py -f -r -o [-b] [--xmin] [--xmax] [--ymin] [--ymax] src_file
+Usage: python split_geodata.py --src_format --res --output --output_format [--ilayer] [--method] [-count_key] [--threads] [--xmin] [--xmax] [--ymin] [--ymax] src_file
 
--f: 可以指定 GDAL 支持的格式，如 'ESRI Shapefile'，'GeoTiff' 等
--r: 指定网格分辨率的别名，可以为 web12, web13, ..., web18, r100, r150, r1000等，具体请参见 grid.py 中的定义
--o: 输出路径
--b: 图层索引，栅格数据指定波段索引
+--src_format: 可以指定 GDAL 支持的格式，如 'ESRI Shapefile'，'GeoTiff' 等
+-res: 指定网格分辨率的别名，可以为 web12, web13, ..., web18, r100, r150, r1000等，具体请参见 grid.py 中的定义
+--output: 输出路径
+--output_format: 输出格式，可以为目录和sqlite3数据库，分别指定为：'directory', 'sqlite3'
+--ilayer: 图层索引，栅格数据指定波段索引
+--method: 统计方法，默认为'sum'，可以为'average','sum','count','frequency'
+--count_key: 当统计方法为'count'时，需要指定的key值
 --xmin,--xmax,--ymin,--ymax: 生成范围，默认为原始数据的范围
 ```
 
