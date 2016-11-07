@@ -103,11 +103,11 @@ class Mesher:
         else:
             meta_file = os.path.join(self.output_dir, 'metas.txt')
             f = open(meta_file, 'w')
-            f.write('minx, %f\n' % (self.extent[0]))
-            f.write('maxx, %f\n' % (self.extent[1]))
-            f.write('miny, %f\n' % (self.extent[2]))
-            f.write('maxy, %f\n' % (self.extent[3]))
-            f.write('last_modified, %s\n' % (date.strftime("%Y-%m-%d %H:%M:%S")))
+            f.write('minx,%f\n' % (self.extent[0]))
+            f.write('maxx,%f\n' % (self.extent[1]))
+            f.write('miny,%f\n' % (self.extent[2]))
+            f.write('maxy,%f\n' % (self.extent[3]))
+            f.write('last_modified,%s\n' % (date.strftime("%Y-%m-%d %H:%M:%S")))
             f.close()
 
 
