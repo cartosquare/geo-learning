@@ -25,6 +25,10 @@ class VectorLayer:
         # clean
         self.datasource.Destroy()
 
+    def setStatisticMethod(self, method, user_data):
+        self.method = method
+        self.user_data = user_data
+
     def open(self, src, ilayer, format):
         # open vector layer
         self.driver = ogr.GetDriverByName(format)
@@ -75,7 +79,8 @@ class VectorLayer:
         self.layer.SetSpatialFilter(poly)
         return self.layer
 
-    def statistic(self, extent, method, user_data):
+
+    def statistic(self, extent):
         if not self.success:
             print('layer is not opened correctly')
             return

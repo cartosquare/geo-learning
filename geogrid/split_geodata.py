@@ -11,21 +11,26 @@
         email                : xux@geohey.com
  ***************************************************************************/
 """
-
-
+from __future__ import division
+import os
 import argparse
+import multiprocessing
 from mesher import Mesher
+import grid_data_pb2
+from progressbar import *
+
 
 def parse_commandline():
     parser = argparse.ArgumentParser(description='Feed data to grid.')
     parser.add_argument('src', metavar='SRC', type=str, help='source data file to feed')
-    parser.add_argument('-f', dest='format', type=str, help='data file format')
-    parser.add_argument('-r', dest='resolution', type=str, help='resolution r1-r4')
-    parser.add_argument('-o', dest='output', type=str, help='output path')
-    parser.add_argument('-t', dest='output_format', type=str, help='output format, can be directory or sqlite3')
-    parser.add_argument('-b', dest='ilayer', type=int, help='data layer index')
-    parser.add_argument('-m', dest='method', type=str, help='method to get grid value')
-    parser.add_argument('-v', dest='cell_value', type=int, help='raster method operator')
+    parser.add_argument('--src_format', dest='format', type=str, help='data file format')
+    parser.add_argument('--res', dest='resolution', type=str, help='resolution r1-r4')
+    parser.add_argument('--output', dest='output', type=str, help='output directory')
+    parser.add_argument('--out_format', dest='output_format', type=str, help='output format, can be directory or sqlite3')
+    parser.add_argument('-ilayer', dest='ilayer', type=int, help='data layer index')
+    parser.add_argument('-method', dest='method', type=str, help='method to get grid value')
+    parser.add_argument('-count_key', dest='cell_value', type=int, help='raster method operator')
+    parser.add_argument('--threads', dest='nthreads', type=int, help='number of threads')
     parser.add_argument('--xmin', dest='xmin', type=float, help="x min")
     parser.add_argument('--xmax', dest='xmax', type=float, help="x max")
     parser.add_argument('--ymin', dest='ymin', type=float, help="y min")
@@ -62,13 +67,31 @@ def parse_commandline():
         args.ilayer = 1
 
     if args.method is None:
-        args.method = 'count'
+        args.method = 'sum'
+
+    if args.nthreads == None:
+        args.nthreads = 1
 
     if (args.method == 'count' or args.method == 'frequency') and args.cell_value is None:
         print 'You must specify -v option when using %s method!' % (args.method)
         return args, False
 
+    if args.output_format != 'directory' and args.nthreads > 1:
+        print 'multiprocessing must use directory output!'
+        return args, False
+
     return args, True
+
+
+def start_process():
+    process_name = multiprocessing.current_process().name
+    layers[process_name] = mesher.openLayer(args)
+
+
+def paralle_jobs(k):
+    process_name = multiprocessing.current_process().name
+    layer = layers[process_name]
+    mesher.makeGrid(k, layer)
 
 
 if __name__=='__main__':
@@ -76,18 +99,35 @@ if __name__=='__main__':
     args, success = parse_commandline()
     if not success:
         exit(0)
-    
+
     mesher = Mesher(args.resolution)
     
     if not mesher.openSource(args):
         exit(0)
+
     if not mesher.openDest(args):
         exit(0)
 
-    mesher.make(args.method, args.cell_value)
+    mesher.updateMetas()
 
-    
+    if args.nthreads > 1:
+        layers = {}
+        # progress bar
+        widgets = [Bar('>'), ' ', Percentage(), ' ', Timer(), ' ', ETA()]
+        pbar = ProgressBar(widgets=widgets, maxval=len(mesher.grids.grid_list)).start()
 
+        max_pool_size = multiprocessing.cpu_count() * 2
+        if args.nthreads > max_pool_size:
+            args.nthreads = max_pool_size
+        print '#processing pool', args.nthreads
     
+        pool = multiprocessing.Pool(processes=args.nthreads, initializer=start_process,)
 
-    
+        for i, _ in enumerate(pool.imap_unordered(paralle_jobs, mesher.grids.grid_list), 1):
+            pbar.update(i)
+
+        pool.close()
+        pool.join()
+        pbar.finish()
+    else:
+        mesher.make()

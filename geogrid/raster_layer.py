@@ -22,10 +22,19 @@ class RasterLayer:
     """RasterLayer Class"""
     def __init__(self):
         self.success = False
+        self.method = 'count'
+        self.user_data = None
+
 
     def __del__(self):
         # clean
         self.datasource = None
+
+
+    def setStatisticMethod(self, method, user_data):
+        self.method = method
+        self.user_data = user_data
+
 
     def open(self, src, band, format):
         # open raster layer
@@ -93,7 +102,7 @@ class RasterLayer:
         data = self.layer.ReadAsArray(x_offset, y_offset, x_size, y_size)
         return data
 
-    def statistic(self, extent, method, user_data):
+    def statistic(self, extent):
         if not self.success:
             print('layer is not opened correctly')
             return
@@ -102,16 +111,16 @@ class RasterLayer:
         if data is None:
             return None
         
-        if method == 'sum':
+        if self.method == 'sum':
             return self.sum(data)
-        elif method == 'average':
+        elif self.method == 'average':
             return self.average(data)
-        elif method == 'count':
-            return self.count(data, user_data)
-        elif method == 'frequency':
-            return self.frequency(data, user_data)
+        elif self.method == 'count':
+            return self.count(data, self.user_data)
+        elif self.method == 'frequency':
+            return self.frequency(data, self.user_data)
         else:
-            print 'unsupport method %s' % (method)
+            print 'unsupport method %s' % (self.method)
             return None
     
 
