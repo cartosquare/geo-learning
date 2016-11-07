@@ -21,7 +21,8 @@ def parse_commandline():
     parser.add_argument('src', metavar='SRC', type=str, help='source data file to feed')
     parser.add_argument('-f', dest='format', type=str, help='data file format')
     parser.add_argument('-r', dest='resolution', type=str, help='resolution r1-r4')
-    parser.add_argument('-o', dest='output', type=str, help='output directory')
+    parser.add_argument('-o', dest='output', type=str, help='output path')
+    parser.add_argument('-t', dest='output_format', type=str, help='output format, can be directory or sqlite3')
     parser.add_argument('-b', dest='ilayer', type=int, help='data layer index')
     parser.add_argument('-m', dest='method', type=str, help='method to get grid value')
     parser.add_argument('-v', dest='cell_value', type=int, help='raster method operator')
@@ -44,7 +45,10 @@ def parse_commandline():
         args.resolutin = 'r3'
 
     if args.output is None:
-        args.output = 'output.sqlite3'
+        args.output = 'output'
+
+    if args.output_format is None:
+        args.output_format = 'directory'
 
     if args.format == 'GeoTiff':
         args.type = 'raster'
@@ -66,6 +70,7 @@ def parse_commandline():
 
     return args, True
 
+
 if __name__=='__main__':
     # parse command line parameters
     args, success = parse_commandline()
@@ -76,7 +81,7 @@ if __name__=='__main__':
     
     if not mesher.openSource(args):
         exit(0)
-    if not mesher.openDest(args.output):
+    if not mesher.openDest(args):
         exit(0)
 
     mesher.make(args.method, args.cell_value)

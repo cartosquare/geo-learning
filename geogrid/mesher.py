@@ -28,7 +28,8 @@ class Mesher:
         self.open_src_success = False
         self.open_dest_success = False
         self.resolution = resolution
-
+        self.feature_table = None
+        self.output_dir = None
 
     def openSource(self, opts):
         # open layer
@@ -56,25 +57,58 @@ class Mesher:
         return self.open_src_success
 
 
-    def openDest(self, path):
-        # open feature db, will create if not exist
-        self.feature_table = FeatureDB(path)
+    def openDest(self, args):
+        print 'output', args.output_format
+
+        if args.output_format == 'sqlite3':
+            # open feature db, will create if not exist
+            self.feature_table = FeatureDB(args.output)
+        else:
+            self.output_dir = args.output
+            if not os.path.exists(self.output_dir):
+                os.mkdir(self.output_dir)
 
         self.open_dest_success = True
         return self.open_dest_success
 
-    def make(self, method, user_data):
+
+    def is_ok(self):
         if not self.open_src_success or not self.open_dest_success:
             print('please open src and dest data first!')
             return False
+        else:
+            return True
+
+
+    def updateMetas(self):
+        if not self.is_ok():
+            return
 
         # write metas 
-        self.feature_table.upsertMeta('minx', self.extent[0])
-        self.feature_table.upsertMeta('maxx', self.extent[1])
-        self.feature_table.upsertMeta('miny', self.extent[2])
-        self.feature_table.upsertMeta('maxy', self.extent[3])
-        date=datetime.datetime.now()
-        self.feature_table.upsertMeta('last_modified', date.strftime("%Y-%m-%d %H:%M:%S"))
+        date = datetime.datetime.now()
+        if self.feature_table is not None:
+            self.feature_table.upsertMeta('minx', self.extent[0])
+            self.feature_table.upsertMeta('maxx', self.extent[1])
+            self.feature_table.upsertMeta('miny', self.extent[2])
+            self.feature_table.upsertMeta('maxy', self.extent[3])
+            self.feature_table.upsertMeta('last_modified', date.strftime("%Y-%m-%d %H:%M:%S"))
+        else:
+            meta_file = os.path.join(self.output_dir, 'metas.txt')
+            f = open(meta_file, 'w')
+            f.write('minx, %f\n' % (self.extent[0]))
+            f.write('maxx, %f\n' % (self.extent[1]))
+            f.write('miny, %f\n' % (self.extent[2]))
+            f.write('maxy, %f\n' % (self.extent[3]))
+            f.write('last_modified, %s\n' % (date.strftime("%Y-%m-%d %H:%M:%S")))
+            f.close()
+
+
+    def make(self, method, user_data):
+        if not self.is_ok():
+            return
+
+        # write metas 
+        self.updateMetas()
         
         # use a progress bar to show the progress of generating grids
         cnt = 0 
@@ -125,10 +159,18 @@ class Mesher:
                 pbar.update(cnt)
             # save to db
             proto_str = grid_data.SerializeToString()
-            self.feature_table.upsert(grid_data.name, self.resolution, proto_str)
+            if self.feature_table is not None:
+                self.feature_table.upsert(grid_data.name, self.resolution, proto_str)
+            else:
+                grid_path = os.path.join(self.output_dir, grid_data.name)
+                f = open(grid_path, 'wb')
+                f.write(proto_str)
+                f.close()
         
         # finish, do not forget to commit
-        self.feature_table.commit()
+        if self.feature_table is not None:
+            self.feature_table.commit()
+
         pbar.finish()
         return True
 
