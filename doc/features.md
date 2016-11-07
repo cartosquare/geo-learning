@@ -15,13 +15,13 @@
 30米全球土地覆盖
 
 ### 10种地表覆盖类型
-* 耕地（Cultivated land）
-* 森林（Forest）
-* 草地（Grassland）
-* 灌木地（Shrubland）
-* 湿地（Wetland）
-* 水体（Water bodies）
-* 苔原(Tundra)
-* 人造地表（Artificial Surface）
-* 裸地（Bareland）
-* 冰川和永久积雪（Permanent snow and ice）
+* 耕地（Cultivated land）, code 10
+* 森林（Forest）, code 20
+* 草地（Grassland）, code 30
+* 灌木地（Shrubland）, code 40
+* 湿地（Wetland）, code 50
+* 水体（Water bodies）, code 60
+* 苔原(Tundra), code 70
+* 人造地表（Artificial Surface）, code 80
+* 裸地（Bareland）, code 90
+* 冰川和永久积雪（Permanent snow and ice）, code 100
