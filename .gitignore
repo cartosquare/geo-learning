@@ -1,5 +1,7 @@
 data*/
 shp/
+tif/
+img/
 playground/
 grid_data_pb2.py
 *.txt
