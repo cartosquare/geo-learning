@@ -31,6 +31,8 @@ class Grid:
         self.res_map = {
             # following resolutions can match to web map's resolutions
             # for example, in web map level 18, the extent of a tile is 152.8740565703125 meters
+            'web10': 39135.758482,
+            'web11': 19567.879241,
             'web12': 9783.9396205,
             'web13': 4891.96981025,
             'web14': 2445.984905125,

@@ -2,7 +2,7 @@
 
 ## 依赖库
 * python 2.7
-* python packages: osgeo, sqlite3, numpy, protobuf, [progressbar](https://github.com/niltonvolpato/python-progressbar)
+* python packages: osgeo, sqlite3, numpy, protobuf, [progressbar](https://github.com/niltonvolpato/python-progressbar), [pyclipper](https://pypi.python.org/pypi/pyclipper/)
 * [torch7](http://torch.ch/docs/getting-started.html#_) with lua 5.1
 * lua packages: [lua-pb](https://github.com/Neopallium/lua-pb), [lsqlite3](http://lua.sqlite.org/index.cgi/doc/tip/doc/lsqlite3.wiki#download)
 

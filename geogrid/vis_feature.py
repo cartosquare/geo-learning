@@ -25,6 +25,7 @@ if __name__=='__main__':
     parser.add_argument('db', metavar='db', type=str, help='source data file to read')
     parser.add_argument('-o', dest='output', type=str, help='output image file')
     parser.add_argument('-r', dest='resolution', type=str, help='resolution')
+    parser.add_argument('-c', dest='constant', type=int, help='constant light')
 
     # parse arguments
     args = parser.parse_args()
@@ -33,6 +34,8 @@ if __name__=='__main__':
     if args.resolution is None:
         print 'please specify -r option'
         exit(0)
+    if args.constant is None:
+        args.constant = 1
 
     feature_db = FeatureDB(args.db)
     extent = feature_db.queryExtent()
@@ -76,14 +79,17 @@ if __name__=='__main__':
                     val = layer.values[idx]
                     if val > 0:
                         # rearrange to row-major
-                        img_arr[yy + row_offset][xx + col_offset] = 255
+                        if args.constant == 1:
+                            img_arr[yy + row_offset][xx + col_offset] = 255
+                        else:
+                            img_arr[yy + row_offset][xx + col_offset] = val
                     if val < pmin:
                         pmin = val
                     if val > pmax:
                         pmax = val
-
-
-    scipy.misc.imsave(args.output, img_arr)
+    
     print ('pixel min max', pmin, pmax)
-    #scipy.misc.toimage(img_arr, cmin=pmin, cmax=...).save(output)
-    #scipy.misc.toimage(img_arr, cmin=0.0, cmax=pmax).save(args.output)
+    if args.constant:
+        scipy.misc.imsave(args.output, img_arr)
+    else:
+        scipy.misc.toimage(img_arr, cmin=pmin, cmax=pmax).save(args.output)

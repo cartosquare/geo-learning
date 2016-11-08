@@ -14,7 +14,10 @@
 
 import os
 import sys
+import json
 from osgeo import ogr
+import pyclipper
+
 
 class VectorLayer:
     """VectorLayer Class"""
@@ -74,10 +77,63 @@ class VectorLayer:
         ring.AddPoint(extent[0],extent[2])
         poly = ogr.Geometry(ogr.wkbPolygon)
         poly.AddGeometry(ring)
-
+        
         self.layer.SetSpatialFilter(None)
         self.layer.SetSpatialFilter(poly)
         return self.layer
+
+    def toCoordinateArray(self, geom):
+        geom.FlattenTo2D()
+        return json.loads(geom.ExportToJson())['coordinates']
+
+    def clipPolyline(self, clip, geom, geometry_type):
+        pc = pyclipper.Pyclipper()
+        try:
+            pc.AddPath(clip, pyclipper.PT_CLIP, True)
+        
+            subject = self.toCoordinateArray(geom)
+            if geometry_type == ogr.wkbLineString:
+                pc.AddPath(subject, pyclipper.PT_SUBJECT, False)
+            else:
+                pc.AddPaths(subject, pyclipper.PT_SUBJECT, False)
+
+            solution = pc.Execute2(pyclipper.CT_INTERSECTION, pyclipper.PFT_EVENODD, pyclipper.PFT_EVENODD)
+            linestrigns = pyclipper.OpenPathsFromPolyTree(solution)
+        except pyclipper.ClipperException as e:
+            print 'Warning:', e, subject
+            return None
+
+        multiline_geom = ogr.Geometry(ogr.wkbMultiLineString)
+        for line in linestrigns:
+            line_geom = ogr.Geometry(ogr.wkbLineString)
+            for pt in line:
+                line_geom.AddPoint(pt[0], pt[1])
+            multiline_geom.AddGeometry(line_geom)
+        return multiline_geom
+
+
+    def clipPolygon(self, clip, geom, geometry_type):
+        pc = pyclipper.Pyclipper()
+        try:
+            pc.AddPath(clip, pyclipper.PT_CLIP, True)
+        
+            subject = self.toCoordinateArray(geom)
+            pc.AddPaths(subject, pyclipper.PT_SUBJECT, True)
+
+            solution = pc.Execute(pyclipper.CT_INTERSECTION, pyclipper.PFT_EVENODD, pyclipper.PFT_EVENODD)
+        except pyclipper.ClipperException as e:
+            print 'Warning:', e
+            return None
+
+        multipolygon_geom = ogr.Geometry(ogr.wkbMultiPolygon)
+        for ring in solution:
+            ring_geom = ogr.Geometry(ogr.wkbLinearRing)
+            for pt in ring:
+                ring_geom.AddPoint(pt[0], pt[1])
+            polygon_geom = ogr.Geometry(ogr.wkbPolygon)
+            polygon_geom.AddGeometry(ring_geom)
+            multipolygon_geom.AddGeometry(polygon_geom)
+        return multipolygon_geom
 
 
     def statistic(self, extent):
@@ -90,6 +146,9 @@ class VectorLayer:
             # extent has no intersection with this data, return right now
             return None
         else:
+            # clip boundary
+            clip_boundary = [[extent[0],extent[2]], [extent[1], extent[2]], [extent[1], extent[3]], [extent[0], extent[3]]]
+
             grid_val = 0
             # calculate count/length/area/.../ of the features in filtered layer
             for feature in data:
@@ -99,9 +158,18 @@ class VectorLayer:
                 if geometry_type == ogr.wkbPoint or geometry_type == ogr.wkbMultiPoint:
                     grid_val = grid_val + 1
                 elif geometry_type == ogr.wkbLineString or geometry_type == ogr.wkbMultiLineString:
-                    grid_val = grid_val + geom.Length()
-                elif geometry_type == ogr.wkbPolygon or geometry_type == ogr.wkbMultiPolygon:
-                    grid_val = grid_val + geom.GetArea()
+                    clipped_geom = self.clipPolyline(clip_boundary, geom, geometry_type)
+                    if clipped_geom is not None:
+                        grid_val = grid_val + clipped_geom.Length()
+                elif geometry_type == ogr.wkbPolygon:
+                    clipped_geom = self.clipPolygon(clip_boundary, geom, geometry_type)
+                    if clipped_geom is not None:
+                        grid_val = grid_val + clipped_geom.GetArea()
+                elif geometry_type == ogr.wkbMultiPolygon:
+                    for polygon in geom:
+                        clipped_geom = self.clipPolygon(clip_boundary, polygon, geometry_type)
+                        if clipped_geom is not None:
+                            grid_val = grid_val + clipped_geom.GetArea()
                 else:
                     print 'unknow geometry type: %s' % (geometry_type)
             return grid_val
