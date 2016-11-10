@@ -32,7 +32,7 @@ class VectorLayer:
         self.method = method
         self.user_data = user_data
 
-    def open(self, src, ilayer, format):
+    def open(self, src, ilayer, format, filter=None):
         # open vector layer
         self.driver = ogr.GetDriverByName(format)
         if self.driver is None:
@@ -48,6 +48,9 @@ class VectorLayer:
             return self.success
 
         self.layer = self.datasource.GetLayer(ilayer)
+        if filter is not None:
+            self.layer.SetAttributeFilter(filter)
+
         self.feature_count = self.layer.GetFeatureCount()
         print "number of features in %s: %d" % (os.path.basename(src), self.feature_count)
 

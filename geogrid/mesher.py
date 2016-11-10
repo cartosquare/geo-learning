@@ -34,11 +34,18 @@ class Mesher:
     def openLayer(self, opts):
         if opts.type == 'vector':
             layer = VectorLayer()
+
+            if opts.layer is None:
+                layer_loc = opts.ilayer
+            else:
+                layer_loc = opts.layer
+            if not layer.open(opts.src, layer_loc, opts.format, opts.filter):
+                return None
         else:
             layer = RasterLayer()
-        if not layer.open(opts.src, opts.ilayer, opts.format):
-            return None
-
+            if not layer.open(opts.src, opts.ilayer, opts.format):
+                return None
+        
         # set statistic mode
         layer.setStatisticMethod(opts.method, opts.cell_value)
 
