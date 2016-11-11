@@ -2,7 +2,7 @@
 /***************************************************************************
  fetch_train_test_set
                                  fetch traing/testing set
- from grid list to torch7 data
+ from grid list to torch7 format training/testing data
                               -------------------
         begin                : 2016-11-3
         copyright            : (C) 2016 by GeoHey
@@ -15,11 +15,14 @@ local torch = require 'torch'
 local math = require 'math'
 
 -- parse command line
-local opts = require 'opts'
+local opts = require 'geonet/opts'
 local opt = opts.parse(arg)
 
 local pb = require 'pb'
-local grid_data = require 'protoc/grid_data'
+local grid_data = require 'geogrid/protoc/grid_data'
+
+print(os.date("%Y-%m-%d %H:%M:%S"))
+print(opt)
 
 -- split feature names
 local features = {}
@@ -45,6 +48,7 @@ for k, v in ipairs(features) do
     features[v] = db
     nfeat = nfeat + 1
 end
+print('nfeatuers: ', nfeat)
 
 -- open train list and write training data
 -- train data size
@@ -76,6 +80,7 @@ end
 sample_cnt = 0
 for line in io.lines(opt.gridList) do
     sample_cnt = sample_cnt + 1
+    print(sample_cnt)
 
     -- split line/sample
     keys = {}
@@ -125,20 +130,24 @@ for line in io.lines(opt.gridList) do
                 -- TODO: if no feature queried, for simple, here set the val to 0.
                 -- Maybe we should drop this sample?
                 for row in features[v]:nrows(string.format("SELECT DATA from feature WHERE ID = '%s'", gid)) do
-                    local bin = row.DATA
-                    local msg = grid_data.GridData():Parse(bin)
-                    layer = msg.layers[1]
-                    -- print(layer.name, layer.version)
+                    if (row ~= nil) then
+                        local bin = row.DATA
+                        local msg = grid_data.GridData():Parse(bin)
+                        layer = msg.layers[1]
 
-                    -- CAUTION: lua index starts from 1, so we add 1 here!!!
-                    idx = layer.keys[n_ix * opt.gridSize + n_iy + 1]
-                    val = layer.values[idx + 1]
+                        -- CAUTION: lua index starts from 1, so we add 1 here!!!
+                        idx = layer.keys[n_ix * opt.gridSize + n_iy + 1]
+                        if (layer.values[idx + 1] ~= nil) then
+                            val = layer.values[idx + 1]
+                        end
+                    end
                 end
-                
+
                 -- add data cell
                 if sample_cnt <= train_num then
                     train_data[sample_cnt][k][i + opt.buffer + 1][j + opt.buffer + 1] = val
                 else
+                    
                     test_data[sample_cnt - train_num][k][i + opt.buffer + 1][j + opt.buffer + 1] = val
                 end
             end -- for k, v in ipairs(features) do
@@ -146,6 +155,7 @@ for line in io.lines(opt.gridList) do
             -- update progress
             grid_cnt = grid_cnt + 1
             if grid_cnt % step == 0 then
+                print(os.date("%Y-%m-%d %H:%M:%S"))
                 print('Processed ', grid_cnt / total_grids)
             end
         end -- for j = -opt.buffer, opt.buffer do
