@@ -36,6 +36,7 @@ if __name__=='__main__':
     feature_db = FeatureDB(args.db)
 
     cnt = 0
+    not_empty_cnt = 0
     data = []
     feature_db.queryByResolution(args.resolution)
     idx_list = []
@@ -51,15 +52,17 @@ if __name__=='__main__':
         for i in range(0, len(layer.keys)):
             idx = layer.keys[i]
             if idx < len(layer.values): # some grid may not be recorded
-                if layer.values[idx] > 0:
+                if layer.values[idx] >= 0:
                     row = i / 256
                     col = i % 256
 
                     data.append({'z': z, 'x': x, 'y': y, 'row': row, 'col': col, 'val': layer.values[idx]})
                     idx_list.append(cnt)
 
-            cnt = cnt + 1
-            pbar.update(cnt)
+                    cnt = cnt + 1
+                    #pbar.update(cnt)
+                    if layer.values[idx] > 0:
+                        not_empty_cnt = not_empty_cnt + 1
         # next row
         row = feature_db.nextRow()
     print cnt
@@ -68,7 +71,13 @@ if __name__=='__main__':
 
     print 'saving ...'
     train = open(args.grid_list, 'w')
+    new_cnt = 0
     for i in idx_list:
+        if (data[i]['val'] == 0):
+            if new_cnt > not_empty_cnt:
+                continue
+            new_cnt = new_cnt + 1
+
         train.write('%s %s %s %d %d %f\n' % (data[i]['z'], data[i]['x'], data[i]['y'], data[i]['row'], data[i]['col'], data[i]['val']))
     train.close()
     
