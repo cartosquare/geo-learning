@@ -77,15 +77,18 @@ if step == 0 then
 end
 
 -- loop for each sample
+local floor = math.floor
+local everyline = io.lines
+local strmatch = string.gmatch
+
 sample_cnt = 0
-for line in io.lines(opt.gridList) do
+for line in everyline(opt.gridList) do
     sample_cnt = sample_cnt + 1
-    print(sample_cnt)
 
     -- split line/sample
     keys = {}
     local key_cnt = 1
-    for i in string.gmatch(line, "%S+") do
+    for i in strmatch(line, "%S+") do
         keys[key_cnt] = i
         key_cnt = key_cnt + 1
     end
@@ -115,10 +118,10 @@ for line in io.lines(opt.gridList) do
             n_oy = oy + j
 
             -- global/relative index
-            n_x = math.floor(n_ox / opt.gridSize)
+            n_x = floor(n_ox / opt.gridSize)
             n_ix = n_ox % opt.gridSize
 
-            n_y = math.floor(n_oy / opt.gridSize)
+            n_y = floor(n_oy / opt.gridSize)
             n_iy = n_oy % opt.gridSize
 
             -- grid id
@@ -147,7 +150,6 @@ for line in io.lines(opt.gridList) do
                 if sample_cnt <= train_num then
                     train_data[sample_cnt][k][i + opt.buffer + 1][j + opt.buffer + 1] = val
                 else
-                    
                     test_data[sample_cnt - train_num][k][i + opt.buffer + 1][j + opt.buffer + 1] = val
                 end
             end -- for k, v in ipairs(features) do
