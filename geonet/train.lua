@@ -15,7 +15,7 @@ require 'nn'
 require 'math'
 
 -- parse command line
-local opts = require 'opts'
+local opts = require 'geonet/opts'
 local opt = opts.parse(arg)
 
 -- loading train/test sets
@@ -71,7 +71,7 @@ for i = 1, nfeatures do -- over each channel
 end
 
 -- define neural network
-local geo_net = require 'geo_net'
+local geo_net = require 'geonet/geo_net'
 net = geo_net.toyNet(nfeatures)
 
 -- define the loass function, use the Mean Squared Error criterion
