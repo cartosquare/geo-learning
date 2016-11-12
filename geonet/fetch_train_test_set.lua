@@ -18,6 +18,10 @@ local math = require 'math'
 local opts = require 'geonet/opts'
 local opt = opts.parse(arg)
 
+local buffer = opt.buffer
+local gridSize = opt.gridSize
+local gridList = opt.gridList
+
 local pb = require 'pb'
 local grid_data = require 'geogrid/protoc/grid_data'
 
@@ -26,7 +30,6 @@ print(opt)
 
 -- split feature names
 local features = {}
-keys = {}
 local feat_cnt = 0
 for feat in string.gmatch(opt.features, "%S+") do
     feat_cnt = feat_cnt + 1
@@ -39,9 +42,8 @@ if feat_cnt == 0 then
     return
 end
 
-
 -- open feature dbs
-nfeat = 0
+local nfeat = 0
 for k, v in ipairs(features) do
     local db_path = opt.featDir .. v .. '.sqlite3'
     db = sqlite3.open(db_path)
@@ -52,26 +54,26 @@ print('nfeatuers: ', nfeat)
 
 -- open train list and write training data
 -- train data size
-samples = 0
+local samples = 0
 for line in io.lines(opt.gridList) do
     samples = samples + 1
 end
 
 -- output double tensor
-train_num = math.floor(samples * 0.6)
-test_num = samples - train_num
-print(train_num,  test_num)
+local train_num = math.floor(samples * 0.6)
+local test_num = samples - train_num
+print('#train, #test', train_num, test_num)
 
-train_data = torch.DoubleTensor(train_num, nfeat, opt.buffer * 2 + 1, opt.buffer * 2 + 1)
-train_label = torch.DoubleTensor(train_num, 1)
-test_data = torch.DoubleTensor(test_num, nfeat, opt.buffer * 2 + 1, opt.buffer * 2 + 1)
-test_label = torch.DoubleTensor(test_num, 1)
+local train_data = torch.DoubleTensor(train_num, nfeat, buffer * 2 + 1, buffer * 2 + 1)
+local train_label = torch.DoubleTensor(train_num, 1)
+local test_data = torch.DoubleTensor(test_num, nfeat, buffer * 2 + 1, buffer * 2 + 1)
+local test_label = torch.DoubleTensor(test_num, 1)
 
 -- only used for reporting progress
-grid_cnt = 0 
-total_grids = samples * (2 * opt.buffer + 1) * (2 * opt.buffer + 1)
+local grid_cnt = 0 
+local total_grids = samples * (2 * buffer + 1) * (2 * buffer + 1)
 print('total grids', total_grids)
-step = math.floor(total_grids/ 100)
+local step = math.floor(total_grids / 100)
 if step == 0 then
     step = 1
 end
@@ -81,23 +83,27 @@ local floor = math.floor
 local everyline = io.lines
 local strmatch = string.gmatch
 
-sample_cnt = 0
-for line in everyline(opt.gridList) do
+local sample_cnt = 0
+for line in everyline(gridList) do
     sample_cnt = sample_cnt + 1
+    -- to cache features, because parse feature from protobuf format is the 
+    -- bottle neck of our program!!!
+    local feature_maps = {}
 
     -- split line/sample
-    keys = {}
+    local keys = {}
     local key_cnt = 1
     for i in strmatch(line, "%S+") do
         keys[key_cnt] = i
         key_cnt = key_cnt + 1
     end
-    z = keys[1]
-    x = tonumber(keys[2])
-    y = tonumber(keys[3])
-    ix = tonumber(keys[4])
-    iy = tonumber(keys[5])
-    label = tonumber(keys[6])
+
+    local z = keys[1]
+    local x = tonumber(keys[2])
+    local y = tonumber(keys[3])
+    local ix = tonumber(keys[4])
+    local iy = tonumber(keys[5])
+    local label = tonumber(keys[6])
 
     -- sample label
     if sample_cnt <= train_num then
@@ -107,66 +113,80 @@ for line in everyline(opt.gridList) do
     end
 
     -- global index of this sample
-    ox = x * opt.gridSize + ix
-    oy = y * opt.gridSize + iy
+    local ox = x * gridSize + ix
+    local oy = y * gridSize + iy
 
+    local t2 = os.time()
+    local t3 = 0
+    local tk = 0
     -- nearby grids of this sample
-    for i = -opt.buffer, opt.buffer do
-        for j = -opt.buffer, opt.buffer do
+    for i = -buffer, buffer do
+        for j = -buffer, buffer do
             -- global index of nearby grid
-            n_ox = ox + i
-            n_oy = oy + j
+            local n_ox = ox + i
+            local n_oy = oy + j
 
             -- global/relative index
-            n_x = floor(n_ox / opt.gridSize)
-            n_ix = n_ox % opt.gridSize
+            local n_x = floor(n_ox / gridSize)
+            local n_ix = n_ox % gridSize
 
-            n_y = floor(n_oy / opt.gridSize)
-            n_iy = n_oy % opt.gridSize
+            local n_y = floor(n_oy / gridSize)
+            local n_iy = n_oy % gridSize
 
             -- grid id
-            gid = z .. '-' .. tostring(n_x) .. '-' .. tostring(n_y)
+            local gid = z .. '-' .. tostring(n_x) .. '-' .. tostring(n_y)
 
             -- loop each feature
             for k, v in ipairs(features) do
-                val = 0.0
-                -- TODO: if no feature queried, for simple, here set the val to 0.
-                -- Maybe we should drop this sample?
-                for row in features[v]:nrows(string.format("SELECT DATA from feature WHERE ID = '%s'", gid)) do
-                    if (row ~= nil) then
+                local val = 0.0
+                if (feature_maps[gid] == nil) then
+                    -- TODO: if no feature queried, for simple, here set the val to 0.
+                    -- Maybe we should drop this sample?
+                    for row in features[v]:nrows(string.format("SELECT DATA from feature WHERE ID = '%s'", gid)) do
                         local bin = row.DATA
                         local msg = grid_data.GridData():Parse(bin)
-                        layer = msg.layers[1]
+                        local layer = msg.layers[1]
+                        -- cache this layer
+                        feature_maps[gid] = layer
 
                         -- CAUTION: lua index starts from 1, so we add 1 here!!!
-                        idx = layer.keys[n_ix * opt.gridSize + n_iy + 1]
-                        if (layer.values[idx + 1] ~= nil) then
-                            val = layer.values[idx + 1]
+                        local idx = layer.keys[n_ix * gridSize + n_iy + 1]
+                        local feat_val = layer.values[idx + 1]
+                        if (feat_val ~= nil) then
+                            val = feat_val
                         end
+                    end
+                else
+                    -- directly get layer from cache :)
+                    local layer = feature_maps[gid]
+                    -- CAUTION: lua index starts from 1, so we add 1 here!!!
+                    local idx = layer.keys[n_ix * gridSize + n_iy + 1]
+                    local feat_val = layer.values[idx + 1]
+                    if (feat_val ~= nil) then
+                        val = feat_val
                     end
                 end
 
                 -- add data cell
                 if sample_cnt <= train_num then
-                    train_data[sample_cnt][k][i + opt.buffer + 1][j + opt.buffer + 1] = val
+                    train_data[sample_cnt][k][i + buffer + 1][j + buffer + 1] = val
                 else
-                    test_data[sample_cnt - train_num][k][i + opt.buffer + 1][j + opt.buffer + 1] = val
+                    test_data[sample_cnt - train_num][k][i + buffer + 1][j + buffer + 1] = val
                 end
             end -- for k, v in ipairs(features) do
-
             -- update progress
             grid_cnt = grid_cnt + 1
             if grid_cnt % step == 0 then
                 print(os.date("%Y-%m-%d %H:%M:%S"))
                 print('Processed ', grid_cnt / total_grids)
             end
-        end -- for j = -opt.buffer, opt.buffer do
-    end -- for i = -opt.buffer, opt.buffer do
-end -- for line in io.lines(opt.gridList) do
+        end -- for j = -buffer, buffer do
+    end -- for i = -buffer, buffer do
+end -- for line in everyline(gridList) do
 
 -- save training data
-trainset = {['data']=train_data, ['label']=train_label}
-testset = {['data']=test_data, ['label']=test_label}
+local trainset = {['data']=train_data, ['label']=train_label}
+local testset = {['data']=test_data, ['label']=test_label}
 torch.save(opt.trainSet, trainset)
 torch.save(opt.testSet, testset)
 
