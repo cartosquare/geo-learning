@@ -23,6 +23,27 @@ y = sin(latitude)
 
 The most important spatial info about Grid is grid resolution and grid size,
 grid resolution means how many meters a small grid represents, and grid size defines how many small grid(along width and height) a big grid contains.
+
+grid area(km2) of each level
+(0, 255603946.7)                                                            
+(1, 63900986.7)                                                            
+(2, 15975246.7)                                                            
+(3, 3993811.7)                                                             
+(4, 998452.92)                                                             
+(5, 249613.23)                                                            
+(6, 62403.307)                                                            
+(7, 15600.827)                                                            
+(8, 3900.2067)                                                             
+(9, 975.05168)                                                             
+(10, 243.7629)                                                            
+(11, 60.94073)                                                             
+(12, 15.23518)                                                             
+(13, 3.808796)                                                             
+(14, 0.952199)                                                            
+(15, 0.238050)                                                           
+(16, 0.059512)*                                                           
+(17, 0.014878)                                                          
+(18, 0.003720) 
 """
 import math
 
