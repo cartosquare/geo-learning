@@ -88,7 +88,7 @@ class Mesher:
 
         # calculate grids
         self.grids = Grid(self.resolution, xmin, xmax, ymin, ymax)
-        self.total_fine_grids = self.grids.total_grids * self.grids.grid_size_x * self.grids.grid_size_y
+        self.total_fine_grids = self.grids.total_grids * self.grids.grid_width * self.grids.grid_height
         print "total grids: %d, %d" % (self.grids.total_grids, self.total_fine_grids)
 
         self.open_src_success = True
@@ -176,8 +176,8 @@ class Mesher:
             grid_val = layer.statistic([xmin, xmax, ymin, ymax])
             if grid_val is None:
                 # this grid has no data, indicate that it's not calculated
-                # because we have at most self.grids.grid_size * self.grids.grid_size small grids in
-                # a big grid, the index to value could not exceed self.grids.grid_size * self.grids.grid_size - 1, here we use self.grids.max_val_index = self.grids.grid_size * self.grids.grid_size to represent that this grid has no data
+                # because we have at most self.grids.grid_width * self.grids.grid_height small grids in
+                # a big grid, the index to value could not exceed self.grids.grid_width * self.grids.grid_height - 1, here we use self.grids.max_val_index = self.grids.grid_width * self.grids.grid_height to represent that this grid has no data
                 grid_layer.keys.append(self.grids.max_val_index + 1)
             else:
                 # find whether this grid value is already recorded

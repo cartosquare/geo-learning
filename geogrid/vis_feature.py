@@ -41,48 +41,48 @@ if __name__=='__main__':
     extent = feature_db.queryLambertExtent()
     print 'extent(minx, maxx, miny, maxy)', extent
 
-    # grid arrangement is col-major
+    # draw a big image contains all the grids
     grids = Grid(args.resolution, extent[0], extent[1], extent[2], extent[3])
-    height = (grids.max_ix - grids.min_ix + 1) * grids.grid_size_x
-    width = (grids.max_iy - grids.min_iy + 1) * grids.grid_size_y
-
+    # big image's dimension
+    height = (grids.max_row - grids.min_row + 1) * grids.grid_height
+    width = (grids.max_col - grids.min_col + 1) * grids.grid_width
+    print(grids.max_row, grids.min_row)
+    print(grids.max_col, grids.min_col)
     print('output image dim', width, height)
-    img_arr = numpy.zeros((width, height))
+    img_arr = numpy.zeros((height, width))
 
-    # find top-left grid Index
-    minx, miny = grids.grid_origin_index()
-    # print('minx, miny', minx, miny)
+    # find start row col
+    minrow, mincol = grids.grid_start_row_col()
 
     pmin = 1000000
     pmax = -pmin
     for k in grids.grid_list:
         grid_name = 'level' + str(args.resolution) + '-' + k
         
-        row = feature_db.queryByID(grid_name)
-        if row is not None:
-            x, y = k.split('-')
-            x = int(x)
-            y = int(y)
-            col_offset = grids.grid_size_x * (x - minx)
-            row_offset = grids.grid_size_y * (y - miny)
+        griddata = feature_db.queryByID(grid_name)
+        if griddata is not None:
+            row, col = k.split('-')
+            row = int(row)
+            col = int(col)
+            row_offset = grids.grid_height * (row - minrow)
+            col_offset = grids.grid_width * (col - mincol)
 
             # parse data
-            griddata = grid_data_pb2.GridData.FromString(row[1])
+            griddata = grid_data_pb2.GridData.FromString(griddata[1])
 
             layer = griddata.layers[0]
-            for xx in range(0, grids.grid_size_x):
-                for yy in range(0, grids.grid_size_y):
-                    idx = layer.keys[xx * grids.grid_size_y + yy]
+            for irow in range(0, grids.grid_height):
+                for icol in range(0, grids.grid_width):
+                    idx = layer.keys[irow * grids.grid_width + icol]
                     if idx > grids.max_val_index:
                         continue
 
                     val = layer.values[idx]
                     if val > 0:
-                        # rearrange to row-major
                         if args.constant == 1:
-                            img_arr[yy + row_offset][xx + col_offset] = 255
+                            img_arr[irow + row_offset][icol + col_offset] = 255
                         else:
-                            img_arr[yy + row_offset][xx + col_offset] = val
+                            img_arr[irow + row_offset][icolxx + col_offset] = val
                     if val < pmin:
                         pmin = val
                     if val > pmax:

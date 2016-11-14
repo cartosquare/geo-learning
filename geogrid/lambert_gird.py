@@ -40,10 +40,10 @@ class LambertGrid:
         self.earth_area = 4 * math.pi * self.earth_radius * self.earth_radius / 1000000
 
         # how many small grids a big grid contains(along width/height)?
-        self.grid_size_x = 128
-        self.grid_size_y = 256
+        self.grid_width = 256
+        self.grid_height = 128
         
-        self.max_val_index = self.grid_size_x * self.grid_size_y - 1
+        self.max_val_index = self.grid_width * self.grid_height - 1
 
         # left-upper corner as world original
         self.world_originalx = -180.0
@@ -57,8 +57,8 @@ class LambertGrid:
         self.res_y = (self.world_originaly - self.world_remotey) / self.pow_of_two[level]
 
         # big grid width/height at @level
-        self.extent_x = self.grid_size_x * self.res_x
-        self.extent_y = self.grid_size_y * self.res_y
+        self.extent_x = self.grid_width * self.res_x
+        self.extent_y = self.grid_height * self.res_y
 
         # big grid extent
         self.minx = minx  # -180
@@ -73,25 +73,25 @@ class LambertGrid:
 
 
     def update_boundary(self):
-        self.min_ix = int((self.minx - self.world_originalx) / self.extent_x)
-        self.min_iy = int((self.world_originaly - self.maxy) / self.extent_y)
+        self.min_col = int((self.minx - self.world_originalx) / self.extent_x)
+        self.min_row = int((self.world_originaly - self.maxy) / self.extent_y)
 
-        self.max_ix = int((self.maxx - self.world_originalx) / self.extent_x)
-        self.max_iy = int((self.world_originaly - self.miny) / self.extent_y)
+        self.max_col = int((self.maxx - self.world_originalx) / self.extent_x)
+        self.max_row = int((self.world_originaly - self.miny) / self.extent_y)
 
-        self.total_grids = (self.max_ix - self.min_ix + 1) * (self.max_iy - self.min_iy + 1)
+        self.total_grids = (self.max_col - self.min_col + 1) * (self.max_row - self.min_row + 1)
         return self.total_grids
 
 
     def grids(self):
         self.grid_list = {}
-        for row in range(self.min_ix, self.max_ix + 1):
-            for col in range(self.min_iy, self.max_iy + 1):
+        for row in range(self.min_row, self.max_row + 1):
+            for col in range(self.min_col, self.max_col + 1):
                 key = '%d-%d' % (row, col)
-                x0 = self.world_originalx + row * self.extent_x
+                x0 = self.world_originalx + col * self.extent_x
                 x1 = x0 + self.extent_x
 
-                y0 = self.world_originaly - col * self.extent_y
+                y0 = self.world_originaly - row * self.extent_y
                 y1 = y0 - self.extent_y
 
                 self.grid_list[key] = [x0, x1, y1, y0]
@@ -99,33 +99,32 @@ class LambertGrid:
         return self.grid_list
     
 
-    def grid_origin_index(self):
-        minx = 100000000
-        miny = minx
+    def grid_start_row_col(self):
+        minrow = 100000000
+        mincol = minrow
         for k in self.grid_list:
-            x, y = k.split('-')
-            x = int(x)
-            y = int(y)
-            if x < minx:
-                minx = x
-            if y < miny:
-                miny = y
-        return minx, miny
+            row, col = k.split('-')
+            row = int(row)
+            col = int(col)
+            if row < minrow:
+                minrow = row
+            if col < mincol:
+                mincol = col
+        return minrow, mincol
 
 
     def fine_grid(self, k):
         fine_grids = []
         ext = self.grid_list[k]
 
-        # a grid contains grid.grid_size_x * grid.grid_size_y small grids
-        # list small girds in col-major(because column index changes first)
-        for row in range(0, self.grid_size_x):
-            for col in range(0, self.grid_size_y):
+        # a grid contains grid.grid_width * grid.grid_height small grids
+        for row in range(0, self.grid_height):
+            for col in range(0, self.grid_width):
                 # calculate small grid extent
-                xx = ext[0] + row * self.res_x
-                yy = ext[3] - col * self.res_y
+                xx = ext[0] + col * self.res_x
+                yy = ext[3] - row * self.res_y
                 extent = [xx, xx + self.res_x, yy - self.res_y, yy]
-                grid = {'idx': row * self.grid_size_y + col, 'extent': extent}
+                grid = {'idx': row * self.grid_width + col, 'extent': extent}
                 fine_grids.append(grid)
     
         return fine_grids
