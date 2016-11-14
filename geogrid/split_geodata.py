@@ -58,6 +58,9 @@ def parse_commandline():
     if args.output_format is None:
         args.output_format = 'directory'
 
+    if args.srs is None:
+        args.srs = 'epsg:3857'
+
     if args.format == 'GeoTiff':
         args.type = 'raster'
     else:
