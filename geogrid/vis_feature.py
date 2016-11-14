@@ -13,7 +13,7 @@ render an image of the feature
 """
 
 import sqlite3
-from grid import Grid
+from lambert_gird import LambertGrid as Grid
 import grid_data_pb2
 from feature_db import FeatureDB
 import argparse
@@ -24,7 +24,7 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Visualize Feature')
     parser.add_argument('db', metavar='db', type=str, help='source data file to read')
     parser.add_argument('-o', dest='output', type=str, help='output image file')
-    parser.add_argument('-r', dest='resolution', type=str, help='resolution')
+    parser.add_argument('-r', dest='resolution', type=int, help='resolution level')
     parser.add_argument('-c', dest='constant', type=int, help='constant light')
 
     # parse arguments
@@ -38,13 +38,13 @@ if __name__=='__main__':
         args.constant = 1
 
     feature_db = FeatureDB(args.db)
-    extent = feature_db.queryExtent()
+    extent = feature_db.queryLambertExtent()
     print 'extent(minx, maxx, miny, maxy)', extent
 
     # grid arrangement is col-major
     grids = Grid(args.resolution, extent[0], extent[1], extent[2], extent[3])
-    height = (grids.max_ix - grids.min_ix + 1) * grids.grid_size
-    width = (grids.max_iy - grids.min_iy + 1) * grids.grid_size
+    height = (grids.max_ix - grids.min_ix + 1) * grids.grid_size_x
+    width = (grids.max_iy - grids.min_iy + 1) * grids.grid_size_y
 
     print('output image dim', width, height)
     img_arr = numpy.zeros((width, height))
@@ -56,23 +56,23 @@ if __name__=='__main__':
     pmin = 1000000
     pmax = -pmin
     for k in grids.grid_list:
-        grid_name = args.resolution + '-' + k
+        grid_name = 'level' + str(args.resolution) + '-' + k
         
         row = feature_db.queryByID(grid_name)
         if row is not None:
             x, y = k.split('-')
             x = int(x)
             y = int(y)
-            col_offset = grids.grid_size * (x - minx)
-            row_offset = grids.grid_size * (y - miny)
+            col_offset = grids.grid_size_x * (x - minx)
+            row_offset = grids.grid_size_y * (y - miny)
 
             # parse data
             griddata = grid_data_pb2.GridData.FromString(row[1])
 
             layer = griddata.layers[0]
-            for xx in range(0, grids.grid_size):
-                for yy in range(0, grids.grid_size):
-                    idx = layer.keys[xx * grids.grid_size + yy]
+            for xx in range(0, grids.grid_size_x):
+                for yy in range(0, grids.grid_size_y):
+                    idx = layer.keys[xx * grids.grid_size_y + yy]
                     if idx > grids.max_val_index:
                         continue
 

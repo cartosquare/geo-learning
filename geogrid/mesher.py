@@ -14,7 +14,8 @@
 import os
 import sys
 import math
-from grid import Grid
+import proj_util
+from lambert_gird import LambertGrid as Grid
 import grid_data_pb2
 from feature_db import FeatureDB
 from vector_layer import VectorLayer
@@ -41,6 +42,13 @@ class Mesher:
                 layer_loc = opts.layer
             if not layer.open(opts.src, layer_loc, opts.format, opts.filter):
                 return None
+
+            if (opts.srs == 'epsg:4326'):
+                layer.setScale(1000000.0)
+            else:
+                # opts.srs == 'epsg:3857'
+                layer.setScale(1000.0)
+            print('scale', layer.scale)
         else:
             layer = RasterLayer()
             if not layer.open(opts.src, opts.ilayer, opts.format):
@@ -63,9 +71,24 @@ class Mesher:
                 self.layer.extent[3] if opts.ymax is None else opts.ymax
             ]
 
+        # transform coordinates
+        self.srs = opts.srs
+        if (opts.srs == 'epsg:4326'):
+            [xmin, ymin] = proj_util.lonlat2lambert([self.extent[0], self.extent[2]])
+            [xmax, ymax] = proj_util.lonlat2lambert([self.extent[1], self.extent[3]])
+        else:
+            # opts.srs == 'epsg:3857'
+            [xmin, ymin] = proj_util.webmercator2lonlat([self.extent[0], self.extent[2]])
+            [xmax, ymax] = proj_util.webmercator2lonlat([self.extent[1], self.extent[3]])
+            [xmin, ymin] = proj_util.lonlat2lambert([xmin, ymin])
+            [xmax, ymax] = proj_util.lonlat2lambert([xmax, ymax])
+
+        self.lambert_extent = [xmin, xmax, ymin, ymax]
+        print('lambert extent: ', self.lambert_extent)
+
         # calculate grids
-        self.grids = Grid(self.resolution, self.extent[0], self.extent[1], self.extent[2], self.extent[3])
-        self.total_fine_grids = self.grids.total_grids * self.grids.grid_size * self.grids.grid_size
+        self.grids = Grid(self.resolution, xmin, xmax, ymin, ymax)
+        self.total_fine_grids = self.grids.total_grids * self.grids.grid_size_x * self.grids.grid_size_y
         print "total grids: %d, %d" % (self.grids.total_grids, self.total_fine_grids)
 
         self.open_src_success = True
@@ -106,6 +129,10 @@ class Mesher:
             self.feature_table.upsertMeta('maxx', self.extent[1])
             self.feature_table.upsertMeta('miny', self.extent[2])
             self.feature_table.upsertMeta('maxy', self.extent[3])
+            self.feature_table.upsertMeta('lambert_minx', self.lambert_extent[0])
+            self.feature_table.upsertMeta('lambert_maxx', self.lambert_extent[1])
+            self.feature_table.upsertMeta('lambert_miny', self.lambert_extent[2])
+            self.feature_table.upsertMeta('lambert_maxy', self.lambert_extent[3])
             self.feature_table.upsertMeta('last_modified', date.strftime("%Y-%m-%d %H:%M:%S"))
         else:
             meta_file = os.path.join(self.output_dir, 'metas.txt')
@@ -114,6 +141,10 @@ class Mesher:
             f.write('maxx,%f\n' % (self.extent[1]))
             f.write('miny,%f\n' % (self.extent[2]))
             f.write('maxy,%f\n' % (self.extent[3]))
+            f.write('lambert_minx,%f\n' % (self.lambert_extent[0]))
+            f.write('lambert_maxx,%f\n' % (self.lambert_extent[1]))
+            f.write('lambert_miny,%f\n' % (self.lambert_extent[2]))
+            f.write('lambert_maxy,%f\n' % (self.lambert_extent[3]))
             f.write('last_modified,%s\n' % (date.strftime("%Y-%m-%d %H:%M:%S")))
             f.close()
 
@@ -121,7 +152,7 @@ class Mesher:
     def makeGrid(self, k, layer):
         # we store grid data in protobuf format
         grid_data = grid_data_pb2.GridData()
-        grid_data.name = self.resolution + '-' + k
+        grid_data.name = 'level' + str(self.resolution) + '-' + k
         
         # add a layer to grid data
         grid_layer = grid_data.layers.add()
@@ -130,7 +161,19 @@ class Mesher:
 
         for find_grid in self.grids.fine_grid(k):
             # do statistic of this small grid
-            grid_val = layer.statistic(find_grid['extent'])
+            ext = find_grid['extent']
+            # transform coordinates
+            if (self.srs == 'epsg:4326'):
+                [xmin, ymin] = proj_util.lambert2lonlat([ext[0], ext[2]])
+                [xmax, ymax] = proj_util.lambert2lonlat([ext[1], ext[3]])
+            else:
+                # opts.srs == 'epsg:3857'
+                [xmin, ymin] = proj_util.lambert2lonlat([ext[0], ext[2]])
+                [xmax, ymax] = proj_util.lambert2lonlat([ext[1], ext[3]])
+                [xmin, ymin] = proj_util.lonlat2webmercator([xmin, ymin])
+                [xmax, ymax] = proj_util.lonlat2webmercator([xmax, ymax])
+
+            grid_val = layer.statistic([xmin, xmax, ymin, ymax])
             if grid_val is None:
                 # this grid has no data, indicate that it's not calculated
                 # because we have at most self.grids.grid_size * self.grids.grid_size small grids in

@@ -2,8 +2,8 @@
 
 """
 /***************************************************************************
- Grid
-                                 grid defination
+ MercatorGrid
+                                 mercator grid defination
  general grid defination and related operations
                               -------------------
         begin                : 2016-11-3
@@ -20,13 +20,13 @@ The most important spatial info about Grid is grid resolution and grid size,
 grid resolution means how many meters a small grid represents, and grid size defines how many small grid(along width and height) a big grid contains.
 """
 
-class Grid:
+class MercatorGrid:
     """Grid Class"""
     def __init__(self, res, minx, maxx, miny, maxy):
         # how many small grids a big grid contains(along width/height)?
         self.grid_size = 256
         self.max_val_index = self.grid_size * self.grid_size - 1
-
+        
         # resolution align names
         self.res_map = {
             # following resolutions can match to web map's resolutions

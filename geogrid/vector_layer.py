@@ -23,10 +23,14 @@ class VectorLayer:
     """VectorLayer Class"""
     def __init__(self):
         self.success = False
+        self.scale = 1000.0
 
     def __del__(self):
         # clean
         self.datasource.Destroy()
+
+    def setScale(self, scale):
+        self.scale = scale
 
     def setStatisticMethod(self, method, user_data):
         self.method = method
@@ -85,16 +89,38 @@ class VectorLayer:
         self.layer.SetSpatialFilter(poly)
         return self.layer
 
-    def toCoordinateArray(self, geom):
+    # clipper library only works on int 
+    def scalePoint(self, coord):
+        return [int(coord[0] * self.scale), int(coord[1] * self.scale)]
+
+    def unscalePoint(self, coord):
+        return [float(coord[0]) / self.scale, float(coord[1]) / self.scale]
+
+    def toCoordinateArray(self, geom, geometry_type):
         geom.FlattenTo2D()
-        return json.loads(geom.ExportToJson())['coordinates']
+        coordinates = json.loads(geom.ExportToJson())['coordinates']
+        new_coordinates = []
+        if geometry_type == ogr.wkbLineString:
+            for coord in coordinates:
+                new_coordinates.append(self.scalePoint(coord))
+        elif geometry_type == ogr.wkbMultiLineString or geometry_type == ogr.wkbPolygon:
+            for linestring in coordinates:
+                new_linestring = []
+                for coord in linestring:
+                    new_linestring.append(self.scalePoint(coord))
+                new_coordinates.append(new_linestring)
+        else:
+            print 'unsurport geometry_type', geometry_type
+
+        return new_coordinates
 
     def clipPolyline(self, clip, geom, geometry_type):
         pc = pyclipper.Pyclipper()
+        subject = None
         try:
             pc.AddPath(clip, pyclipper.PT_CLIP, True)
         
-            subject = self.toCoordinateArray(geom)
+            subject = self.toCoordinateArray(geom, geometry_type)
             if geometry_type == ogr.wkbLineString:
                 pc.AddPath(subject, pyclipper.PT_SUBJECT, False)
             else:
@@ -110,7 +136,8 @@ class VectorLayer:
         for line in linestrigns:
             line_geom = ogr.Geometry(ogr.wkbLineString)
             for pt in line:
-                line_geom.AddPoint(pt[0], pt[1])
+                new_pt = self.unscalePoint([pt[0], pt[1]])
+                line_geom.AddPoint(new_pt[0], new_pt[1])
             multiline_geom.AddGeometry(line_geom)
         return multiline_geom
 
@@ -120,7 +147,7 @@ class VectorLayer:
         try:
             pc.AddPath(clip, pyclipper.PT_CLIP, True)
         
-            subject = self.toCoordinateArray(geom)
+            subject = self.toCoordinateArray(geom, geometry_type)
             pc.AddPaths(subject, pyclipper.PT_SUBJECT, True)
 
             solution = pc.Execute(pyclipper.CT_INTERSECTION, pyclipper.PFT_EVENODD, pyclipper.PFT_EVENODD)
@@ -132,7 +159,8 @@ class VectorLayer:
         for ring in solution:
             ring_geom = ogr.Geometry(ogr.wkbLinearRing)
             for pt in ring:
-                ring_geom.AddPoint(pt[0], pt[1])
+                new_pt = self.unscalePoint([pt[0], pt[1]])
+                ring_geom.AddPoint(new_pt[0], new_pt[1])
             polygon_geom = ogr.Geometry(ogr.wkbPolygon)
             polygon_geom.AddGeometry(ring_geom)
             multipolygon_geom.AddGeometry(polygon_geom)
@@ -143,14 +171,14 @@ class VectorLayer:
         if not self.success:
             print('layer is not opened correctly')
             return
-
+        # print('statistic')
         data = self.spatialQuery(extent)
         if data is None:
             # extent has no intersection with this data, return right now
             return None
         else:
             # clip boundary
-            clip_boundary = [[extent[0],extent[2]], [extent[1], extent[2]], [extent[1], extent[3]], [extent[0], extent[3]]]
+            clip_boundary = [self.scalePoint([extent[0],extent[2]]), self.scalePoint([extent[1], extent[2]]), self.scalePoint([extent[1], extent[3]]), self.scalePoint([extent[0], extent[3]])]
 
             grid_val = 0
             # calculate count/length/area/.../ of the features in filtered layer

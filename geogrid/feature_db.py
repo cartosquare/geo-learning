@@ -93,6 +93,19 @@ class FeatureDB:
         return [minx, maxx, miny, maxy]
 
 
+    def queryLambertExtent(self):
+        cursor = self.db.execute("SELECT VALUE from metas WHERE TAG = 'lambert_minx'")
+        minx = float(cursor.fetchone()[0])
+        cursor = self.db.execute("SELECT VALUE from metas WHERE TAG = 'lambert_maxx'")
+        maxx = float(cursor.fetchone()[0])
+        cursor = self.db.execute("SELECT VALUE from metas WHERE TAG = 'lambert_miny'")
+        miny = float(cursor.fetchone()[0])
+        cursor = self.db.execute("SELECT VALUE from metas WHERE TAG = 'lambert_maxy'")
+        maxy = float(cursor.fetchone()[0])
+
+        return [minx, maxx, miny, maxy]
+
+
     def nextRow(self):
         return self.cursor.fetchone()
         
