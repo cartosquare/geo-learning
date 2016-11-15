@@ -47,8 +47,12 @@ if __name__=='__main__':
     extent = feature_db.queryLambertExtent()
     print 'extent(minx, maxx, miny, maxy)', extent
 
+    gridInfo = feature_db.queryGridInfo()
+    print 'grid info', gridInfo
+
     # draw a big image contains all the grids
-    grids = Grid(args.resolution, extent[0], extent[1], extent[2], extent[3])
+    grids = Grid(args.resolution, extent[0], extent[1], extent[2], extent[3], gridInfo[2])
+    
     # big image's dimension
     height = (grids.max_row - grids.min_row + 1) * grids.grid_height
     width = (grids.max_col - grids.min_col + 1) * grids.grid_width
@@ -62,11 +66,11 @@ if __name__=='__main__':
 
     pmin = 1000000
     pmax = -pmin
-    print(len(grids.grid_list))
 
     for k in grids.grid_list:
-        grid_name = 'level' + str(args.resolution) + '-' + k
-        row, col = k.split('-')
+        grid_name = 'level' + str(args.resolution) + '_' + k
+        print('process subgrid', grid_name)
+        row, col = k.split('_')
         row = int(row)
         col = int(col)
         bk_val = 0
@@ -93,18 +97,25 @@ if __name__=='__main__':
             for irow in range(0, grids.grid_height):
                 for icol in range(0, grids.grid_width):
                     idx = layer.keys[irow * grids.grid_width + icol]
+
+                    if grids.flip:
+                        img_row = irow + row_offset
+                    else:
+                        img_row = height - (irow + row_offset) - 1
+                    img_col = icol + col_offset
+
                     if idx > grids.max_val_index:
-                        img_arr[irow + row_offset][icol + col_offset] = bk_val
+                        img_arr[img_row][img_col] = bk_val
                         continue
 
                     val = layer.values[idx]
                     if val > 0:
                         if args.constant == 1:
-                            img_arr[irow + row_offset][icol + col_offset] = 255
+                            img_arr[img_row][img_col] = 255
                         else:
-                            img_arr[irow + row_offset][icol + col_offset] = val
+                            img_arr[img_row][img_col] = val
                     else:
-                        img_arr[irow + row_offset][icol + col_offset] = bk_val
+                        img_arr[img_row][img_col] = bk_val
 
                     if val < pmin:
                         pmin = val

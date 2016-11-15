@@ -31,6 +31,7 @@ def parse_commandline():
     parser.add_argument('--ilayer', dest='ilayer', type=int, help='data layer index')
     parser.add_argument('--layer', dest='layer', type=str, help='data layer name')
     parser.add_argument('--filter', dest='filter', type=str, help='data layer filter')
+    parser.add_argument('--flip', dest='flip', type=int, help='flip y axe of grid system')
     parser.add_argument('--method', dest='method', type=str, help='method to get grid value')
     parser.add_argument('--count_key', dest='cell_value', type=int, help='raster method operator')
     parser.add_argument('--threads', dest='nthreads', type=int, help='number of threads')
@@ -57,6 +58,10 @@ def parse_commandline():
 
     if args.output_format is None:
         args.output_format = 'directory'
+
+    # Default not to flip grid system
+    if args.flip is None:
+        args.flip = 0
 
     if args.srs is None:
         args.srs = 'epsg:3857'

@@ -37,7 +37,7 @@ with open(os.path.join(dir, 'metas.txt'), 'r') as f:
 cnt = 0
 for parent, dirnames, files in os.walk(dir):
     for file in files:
-        items = file.split('-')
+        items = file.split('_')
         if len(items) != 3:
             continue
 

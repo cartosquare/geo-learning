@@ -6,7 +6,7 @@
                                  lambert grid defination
  general grid defination and related operations
                               -------------------
-        begin                : 2016-11-3
+        begin                : 2016-11-14
         copyright            : (C) 2016 by GeoHey
         email                : xux@geohey.com
  ***************************************************************************/
@@ -21,8 +21,8 @@ y = sin(latitude)
 
  This class defines the spatial info and spatial operations(including giving an extent, calculating how many big grids and small grids within it)
 
-The most important spatial info about Grid is grid resolution and grid size,
-grid resolution means how many meters a small grid represents, and grid size defines how many small grid(along width and height) a big grid contains.
+The most important spatial info about Grid is grid resolution and grid width/height,
+grid resolution means how many meters a small grid represents, and grid width/height defines how many small grid(along width and height) a big grid contains.
 
 grid area(km2) of each level
 (0, 255603946.7)                                                            
@@ -45,11 +45,16 @@ grid area(km2) of each level
 (17, 0.014878)                                                          
 (18, 0.003720) 
 """
+
 import math
 
 class LambertGrid:
     """LambertGrid Class"""
-    def __init__(self, level, minx, maxx, miny, maxy):
+    def __init__(self, level, minx, maxx, miny, maxy, flip=False):
+        # default y-axe direction is up
+        # set self.flip = True to set y-axe direction to point down(this is what mercator webmap do) 
+        self.flip = flip
+
         # constant variables
         self.pow_of_two = [1]
         for i in range(1, 20):
@@ -66,16 +71,20 @@ class LambertGrid:
         
         self.max_val_index = self.grid_width * self.grid_height - 1
 
-        # left-upper corner as world original
-        self.world_originalx = -180.0
-        self.world_remotex = 180.0
+        # world original
+        self.world_originalx = 0
+        self.world_originaly = 0
 
-        self.world_originaly = 1.0
-        self.world_remotey = -1.0
+        # world extent
+        self.world_minx = -180.0
+        self.world_maxx = 180.0
+
+        self.world_miny = -1.0
+        self.world_maxy = 1.0
 
         # small grid resolution at @level
-        self.res_x = (self.world_remotex - self.world_originalx) / self.pow_of_two[level + 1]
-        self.res_y = (self.world_originaly - self.world_remotey) / self.pow_of_two[level]
+        self.res_x = (self.world_maxx - self.world_minx) / self.pow_of_two[level + 1]
+        self.res_y = (self.world_maxy - self.world_miny) / self.pow_of_two[level]
 
         # big grid width/height at @level
         self.extent_x = self.grid_width * self.res_x
@@ -94,11 +103,15 @@ class LambertGrid:
 
 
     def update_boundary(self):
-        self.min_col = int((self.minx - self.world_originalx) / self.extent_x)
-        self.min_row = int((self.world_originaly - self.maxy) / self.extent_y)
+        self.min_col = int(math.floor((self.minx - self.world_originalx) / self.extent_x))
+        self.max_col = int(math.floor((self.maxx - self.world_originalx) / self.extent_x))
 
-        self.max_col = int((self.maxx - self.world_originalx) / self.extent_x)
-        self.max_row = int((self.world_originaly - self.miny) / self.extent_y)
+        if self.flip:
+            self.min_row = int(math.floor((self.world_originaly - self.maxy) / self.extent_y))
+            self.max_row = int(math.floor((self.world_originaly - self.miny) / self.extent_y))
+        else:
+            self.min_row = int(math.floor((self.miny - self.world_originaly) / self.extent_y))
+            self.max_row = int(math.floor((self.maxy - self.world_originaly) / self.extent_y))
 
         self.total_grids = (self.max_col - self.min_col + 1) * (self.max_row - self.min_row + 1)
         return self.total_grids
@@ -106,16 +119,21 @@ class LambertGrid:
 
     def grids(self):
         self.grid_list = {}
+
         for row in range(self.min_row, self.max_row + 1):
             for col in range(self.min_col, self.max_col + 1):
-                key = '%d-%d' % (row, col)
+                key = '%d_%d' % (row, col)
                 x0 = self.world_originalx + col * self.extent_x
                 x1 = x0 + self.extent_x
 
-                y0 = self.world_originaly - row * self.extent_y
-                y1 = y0 - self.extent_y
+                if self.flip:
+                    y1 = self.world_originaly - row * self.extent_y
+                    y0 = y1 - self.extent_y
+                else:
+                    y0 = self.world_originaly + row * self.extent_y
+                    y1 = y0 + self.extent_y
 
-                self.grid_list[key] = [x0, x1, y1, y0]
+                self.grid_list[key] = [x0, x1, y0, y1]
 
         return self.grid_list
     
@@ -124,7 +142,7 @@ class LambertGrid:
         minrow = 100000000
         mincol = minrow
         for k in self.grid_list:
-            row, col = k.split('-')
+            row, col = k.split('_')
             row = int(row)
             col = int(col)
             if row < minrow:
@@ -143,8 +161,13 @@ class LambertGrid:
             for col in range(0, self.grid_width):
                 # calculate small grid extent
                 xx = ext[0] + col * self.res_x
-                yy = ext[3] - row * self.res_y
-                extent = [xx, xx + self.res_x, yy - self.res_y, yy]
+                if self.flip:
+                    yy = ext[3] - row * self.res_y
+                    extent = [xx, xx + self.res_x, yy - self.res_y, yy]
+                else:
+                    yy = ext[2] + row * self.res_y
+                    extent = [xx, xx + self.res_x, yy, yy + self.res_y]
+
                 grid = {'idx': row * self.grid_width + col, 'extent': extent}
                 fine_grids.append(grid)
     

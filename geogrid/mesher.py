@@ -87,7 +87,7 @@ class Mesher:
         print('lambert extent: ', self.lambert_extent)
 
         # calculate grids
-        self.grids = Grid(self.resolution, xmin, xmax, ymin, ymax)
+        self.grids = Grid(self.resolution, xmin, xmax, ymin, ymax, opts.flip)
         self.total_fine_grids = self.grids.total_grids * self.grids.grid_width * self.grids.grid_height
         print "total grids: %d, %d" % (self.grids.total_grids, self.total_fine_grids)
 
@@ -133,6 +133,11 @@ class Mesher:
             self.feature_table.upsertMeta('lambert_maxx', self.lambert_extent[1])
             self.feature_table.upsertMeta('lambert_miny', self.lambert_extent[2])
             self.feature_table.upsertMeta('lambert_maxy', self.lambert_extent[3])
+
+            self.feature_table.upsertMeta('grid_originalx', self.grids.world_originalx)
+            self.feature_table.upsertMeta('grid_originaly', self.grids.world_originaly)
+            self.feature_table.upsertMeta('flip_grid', self.grids.flip)
+            
             self.feature_table.upsertMeta('last_modified', date.strftime("%Y-%m-%d %H:%M:%S"))
         else:
             meta_file = os.path.join(self.output_dir, 'metas.txt')
@@ -145,6 +150,11 @@ class Mesher:
             f.write('lambert_maxx,%f\n' % (self.lambert_extent[1]))
             f.write('lambert_miny,%f\n' % (self.lambert_extent[2]))
             f.write('lambert_maxy,%f\n' % (self.lambert_extent[3]))
+
+            f.write('grid_originalx,%f\n' % (self.grids.world_originalx))
+            f.write('grid_originaly,%f\n' % (self.grids.world_originaly))
+            f.write('flip_grid,%f\n' % (self.grids.flip))
+
             f.write('last_modified,%s\n' % (date.strftime("%Y-%m-%d %H:%M:%S")))
             f.close()
 
@@ -152,7 +162,7 @@ class Mesher:
     def makeGrid(self, k, layer):
         # we store grid data in protobuf format
         grid_data = grid_data_pb2.GridData()
-        grid_data.name = 'level' + str(self.resolution) + '-' + k
+        grid_data.name = 'level' + str(self.resolution) + '_' + k
         
         # add a layer to grid data
         grid_layer = grid_data.layers.add()

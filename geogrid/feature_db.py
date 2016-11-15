@@ -106,6 +106,17 @@ class FeatureDB:
         return [minx, maxx, miny, maxy]
 
 
+    def queryGridInfo(self):
+        cursor = self.db.execute("SELECT VALUE from metas WHERE TAG = 'grid_originalx'")
+        ox = float(cursor.fetchone()[0])
+        cursor = self.db.execute("SELECT VALUE from metas WHERE TAG = 'grid_originaly'")
+        oy = float(cursor.fetchone()[0])
+        cursor = self.db.execute("SELECT VALUE from metas WHERE TAG = 'flip_grid'")
+        flip = int(float(cursor.fetchone()[0]))
+
+        return [ox, oy, flip]
+
+
     def nextRow(self):
         return self.cursor.fetchone()
         
