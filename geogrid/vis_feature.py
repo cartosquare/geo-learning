@@ -26,6 +26,7 @@ if __name__=='__main__':
     parser.add_argument('-o', dest='output', type=str, help='output image file')
     parser.add_argument('-r', dest='resolution', type=int, help='resolution level')
     parser.add_argument('-c', dest='constant', type=int, help='constant light')
+    parser.add_argument('-g', dest='grid', type=int, help='display grid or not')
 
     # parse arguments
     args = parser.parse_args()
@@ -36,6 +37,11 @@ if __name__=='__main__':
         exit(0)
     if args.constant is None:
         args.constant = 1
+    if args.grid is None:
+        if args.constant == 1:
+            args.grid = 1
+        else:
+            args.grid = 0
 
     feature_db = FeatureDB(args.db)
     extent = feature_db.queryLambertExtent()
@@ -56,14 +62,27 @@ if __name__=='__main__':
 
     pmin = 1000000
     pmax = -pmin
+    print(len(grids.grid_list))
+
     for k in grids.grid_list:
         grid_name = 'level' + str(args.resolution) + '-' + k
-        
+        row, col = k.split('-')
+        row = int(row)
+        col = int(col)
+        bk_val = 0
+        if row % 2 == 0:
+            if col % 2 == 1:
+                bk_val = 0
+            else:
+                bk_val = 20
+        else:
+            if col % 2 == 1:
+                bk_val = 40
+            else:
+                bk_val = 60
+
         griddata = feature_db.queryByID(grid_name)
         if griddata is not None:
-            row, col = k.split('-')
-            row = int(row)
-            col = int(col)
             row_offset = grids.grid_height * (row - minrow)
             col_offset = grids.grid_width * (col - mincol)
 
@@ -75,6 +94,7 @@ if __name__=='__main__':
                 for icol in range(0, grids.grid_width):
                     idx = layer.keys[irow * grids.grid_width + icol]
                     if idx > grids.max_val_index:
+                        img_arr[irow + row_offset][icol + col_offset] = bk_val
                         continue
 
                     val = layer.values[idx]
@@ -82,7 +102,10 @@ if __name__=='__main__':
                         if args.constant == 1:
                             img_arr[irow + row_offset][icol + col_offset] = 255
                         else:
-                            img_arr[irow + row_offset][icolxx + col_offset] = val
+                            img_arr[irow + row_offset][icol + col_offset] = val
+                    else:
+                        img_arr[irow + row_offset][icol + col_offset] = bk_val
+
                     if val < pmin:
                         pmin = val
                     if val > pmax:
