@@ -13,9 +13,9 @@ render an image of the feature
 """
 
 import sqlite3
-from lambert_gird import LambertGrid as Grid
-import grid_data_pb2
-from feature_db import FeatureDB
+from geogrid.lambert_grid import LambertGrid as Grid
+import geogrid.grid_data_pb2 as grid_data_pb2
+from geogrid.feature_db import FeatureDB
 import argparse
 import numpy
 import scipy.misc

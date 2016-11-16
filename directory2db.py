@@ -16,7 +16,7 @@ Usage: python directory2db.py directory_paht sqlite3_db_path
 
 import sys
 import os
-from feature_db import FeatureDB
+from geogrid.feature_db import FeatureDB
 
 
 # get parameters

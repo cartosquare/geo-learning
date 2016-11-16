@@ -13,7 +13,7 @@
 """
 
 import sqlite3
-import geogrid.grid_data_pb2
+import geogrid.grid_data_pb2 as grid_data_pb2
 from geogrid.feature_db import FeatureDB
 import argparse
 import random
@@ -38,7 +38,7 @@ if __name__=='__main__':
     cnt = 0
     not_empty_cnt = 0
     data = []
-    feature_db.queryByResolution(args.resolution)
+    feature_db.queryByResolution('level' + args.resolution)
     idx_list = []
     row = feature_db.nextRow()
     widgets = [AnimatedMarker(), ' ', Timer()]
@@ -46,7 +46,8 @@ if __name__=='__main__':
     while row is not None:
         # parse data
         griddata = grid_data_pb2.GridData.FromString(row[1])
-        z, x, y = griddata.name.split('-')
+        print(griddata.name)
+        z, x, y = griddata.name.split('_')
 
         layer = griddata.layers[0]
         for i in range(0, len(layer.keys)):
