@@ -137,7 +137,9 @@ class Mesher:
             self.feature_table.upsertMeta('grid_originalx', self.grids.world_originalx)
             self.feature_table.upsertMeta('grid_originaly', self.grids.world_originaly)
             self.feature_table.upsertMeta('flip_grid', self.grids.flip)
-            
+            self.feature_table.upsertMeta('grid_width', self.grids.grid_width)
+            self.feature_table.upsertMeta('grid_height', self.grids.grid_height)
+
             self.feature_table.upsertMeta('last_modified', date.strftime("%Y-%m-%d %H:%M:%S"))
         else:
             meta_file = os.path.join(self.output_dir, 'metas.txt')
@@ -153,7 +155,9 @@ class Mesher:
 
             f.write('grid_originalx,%f\n' % (self.grids.world_originalx))
             f.write('grid_originaly,%f\n' % (self.grids.world_originaly))
-            f.write('flip_grid,%f\n' % (self.grids.flip))
+            f.write('flip_grid,%d\n' % (self.grids.flip))
+            f.write('grid_width,%d\n' % (self.grids.grid_width))
+            f.write('grid_height,%d\n' % (self.grids.grid_height))
 
             f.write('last_modified,%s\n' % (date.strftime("%Y-%m-%d %H:%M:%S")))
             f.close()

@@ -114,7 +114,12 @@ class FeatureDB:
         cursor = self.db.execute("SELECT VALUE from metas WHERE TAG = 'flip_grid'")
         flip = int(float(cursor.fetchone()[0]))
 
-        return [ox, oy, flip]
+        cursor = self.db.execute("SELECT VALUE from metas WHERE TAG = 'grid_width'")
+        grid_width = int(float(cursor.fetchone()[0]))
+        cursor = self.db.execute("SELECT VALUE from metas WHERE TAG = 'grid_height'")
+        grid_height = int(float(cursor.fetchone()[0]))
+
+        return [ox, oy, flip, grid_width, grid_height]
 
 
     def nextRow(self):
