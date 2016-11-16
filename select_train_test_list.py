@@ -34,7 +34,11 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     feature_db = FeatureDB(args.db)
-
+    grid_info = feature_db.queryGridInfo()
+    grid_width = grid_info[3]
+    grid_height = grid_info[4]
+    print(grid_width, grid_height)
+    
     cnt = 0
     not_empty_cnt = 0
     data = []
@@ -54,8 +58,8 @@ if __name__=='__main__':
             idx = layer.keys[i]
             if idx < len(layer.values): # some grid may not be recorded
                 if layer.values[idx] >= 0:
-                    row = i / 256
-                    col = i % 256
+                    row = i / grid_width
+                    col = i % grid_width
 
                     data.append({'z': z, 'x': x, 'y': y, 'row': row, 'col': col, 'val': layer.values[idx]})
                     idx_list.append(cnt)
