@@ -1,33 +1,33 @@
 # Tutorial
 Goal: Predict supermarket distribution from carservice and laundry distribution
 
-## Raw Data
+## 1. Raw Data
 * carservice.shp top-10 car service distribution in beijing.
 * laundry.shp top-10 laundry distribution in beijing.
 * supermarket.shp top-10 supermarket distribution in beijing.
 
-## Split raw data into grids
+## 2. Split raw data into grids
 ```bash
 $ python split_geodata.py --src_format 'ESRI Shapefile' --res 15 --out_format 'directory' --output data/carservice --threads 8 shp/walmart/carservice.shp
 $ python split_geodata.py --src_format 'ESRI Shapefile' --res 15 --out_format 'directory' --output data/laundry --threads 8 shp/walmart/laundry.shp
 $ python split_geodata.py --src_format 'ESRI Shapefile' --res 15 --out_format 'directory' --output data/supermarket --threads 8 shp/walmart/supermarket.shp
 ```
 
-## Convert directory format grids to sqlite3 database
+## 3. Convert directory format grids to sqlite3 database
 ```bash
 $ python directory2db.py data/carservice data/carservice.sqlite3
 $ python directory2db.py data/laundry data/laundry.sqlite3
 $ python directory2db.py data/supermarket data/supermarket.sqlite3 
 ```
 
-## Visulaze the grids of data
+## 4. Visulaze the grids of data
 ```bash
 $ python vis_feature.py -o data/carservice.jpg -r 15 data/carservice.sqlite3
 $ python vis_feature.py -o data/laundry.jpg -r 15 data/laundry.sqlite3
 $ python vis_feature.py -o data/supermarket.jpg -r 15 data/supermarket.sqlite3
 ```
 
-## Prepare training set
+## 5. Prepare training set
 ```bash
 $ python select_train_test_list.py -r 15 -o data/grid_list.txt data/supermarket.sqlite3
 $ th geonet/fetch_train_test_set.lua -trainSet data/train.t7 -testSet data/test.t7 -gridList data/grid_list.txt -buffer 4 -featDir data/ -features 'carservice laundry'
@@ -44,7 +44,7 @@ $ th geonet/fetch_train_test_set.lua -trainSet data/train.t7 -testSet data/test.
   label : DoubleTensor - size: 446x1
 }
 ```
-## Train CNN
+## 6. Train CNN
 ```bash
 $ th geonet/train.lua -LR 0.001 -nEpochs 50 -trainSet data/train.t7 -testSet data/test.t7
 ```
