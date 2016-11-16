@@ -15,7 +15,7 @@ import os
 import sys
 import math
 import proj_util
-from lambert_gird import LambertGrid as Grid
+from lambert_grid import LambertGrid as Grid
 import grid_data_pb2
 from feature_db import FeatureDB
 from vector_layer import VectorLayer
