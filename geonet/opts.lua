@@ -21,7 +21,8 @@ function M.parse(arg)
     ------------ General options --------------------
    cmd:option('-trainSet',  'data/train.t7',    'Path to training dataset')
    cmd:option('-testSet',   'data/test.t7',     'Path to test dataset')
-   cmd:option('-gridSize',   256,     'we store grid_size * grid_size in a grid layer')
+   cmd:option('-gridWidth',   256,     'we store gridWidth * gridHeight in a grid layer')
+   cmd:option('-gridHeight',  128,     'we store gridWidth * gridHeight in a grid layer')
    cmd:option('-gridList',   '',     'grid list for training')
    ------------ Fetch train test options --------------------
    cmd:option('-buffer',    12,         'how many nearby grid to included to compute')

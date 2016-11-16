@@ -18,8 +18,8 @@ function M.toyNet(input_channels)
     net:add(nn.SpatialConvolution(input_channels, 6, 3, 3)) 
     net:add(nn.ReLU())  -- non-linearity 
 
-    net:add(nn.View(6 * 23 * 23))   -- reshapes from a 3D tensor of 16x5x5 into 1D tensor of 16*5*5
-    net:add(nn.Linear(6*23*23, 120))    -- fully connected layer (matrix multiplication between input and weights)
+    net:add(nn.View(6 * 7 * 7))   -- reshapes from a 3D tensor of 16x5x5 into 1D tensor of 16*5*5
+    net:add(nn.Linear(6 * 7 * 7, 120))    -- fully connected layer (matrix multiplication between input and weights)
     net:add(nn.ReLU())          -- non-linearity 
     net:add(nn.Linear(120, 84))
     net:add(nn.ReLU())          -- non-linearity 

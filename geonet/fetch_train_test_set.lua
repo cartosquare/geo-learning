@@ -19,7 +19,8 @@ local opts = require 'geonet/opts'
 local opt = opts.parse(arg)
 
 local buffer = opt.buffer
-local gridSize = opt.gridSize
+local gridWidth = opt.gridWidth
+local gridHeight = opt.gridHeight
 local gridList = opt.gridList
 
 local pb = require 'pb'
@@ -46,11 +47,13 @@ end
 local nfeat = 0
 for k, v in ipairs(features) do
     local db_path = opt.featDir .. v .. '.sqlite3'
+    print(db_path)
     db = sqlite3.open(db_path)
     features[v] = db
     nfeat = nfeat + 1
 end
 print('nfeatuers: ', nfeat)
+print(features)
 
 -- open train list and write training data
 -- train data size
@@ -113,12 +116,12 @@ for line in everyline(gridList) do
     end
 
     -- global index of this sample
-    local ox = x * gridSize + ix
-    local oy = y * gridSize + iy
+    local ox = x * gridHeight + ix
+    local oy = y * gridWidth + iy
 
-    local t2 = os.time()
-    local t3 = 0
-    local tk = 0
+    --local t2 = os.time()
+    --local t3 = 0
+    --local tk = 0
     -- nearby grids of this sample
     for i = -buffer, buffer do
         for j = -buffer, buffer do
@@ -127,19 +130,20 @@ for line in everyline(gridList) do
             local n_oy = oy + j
 
             -- global/relative index
-            local n_x = floor(n_ox / gridSize)
-            local n_ix = n_ox % gridSize
+            local n_x = floor(n_ox / gridHeight)
+            local n_ix = n_ox % gridHeight
 
-            local n_y = floor(n_oy / gridSize)
-            local n_iy = n_oy % gridSize
+            local n_y = floor(n_oy / gridWidth)
+            local n_iy = n_oy % gridWidth
 
             -- grid id
-            local gid = z .. '-' .. tostring(n_x) .. '-' .. tostring(n_y)
+            local gid = z .. '_' .. tostring(n_x) .. '_' .. tostring(n_y)
 
-            -- loop each feature
+            -- loop each feature    
             for k, v in ipairs(features) do
+                local feat_map_key = v .. '_' .. gid
                 local val = 0.0
-                if (feature_maps[gid] == nil) then
+                if (feature_maps[feat_map_key] == nil) then
                     -- TODO: if no feature queried, for simple, here set the val to 0.
                     -- Maybe we should drop this sample?
                     for row in features[v]:nrows(string.format("SELECT DATA from feature WHERE ID = '%s'", gid)) do
@@ -147,10 +151,10 @@ for line in everyline(gridList) do
                         local msg = grid_data.GridData():Parse(bin)
                         local layer = msg.layers[1]
                         -- cache this layer
-                        feature_maps[gid] = layer
+                        feature_maps[feat_map_key] = layer
 
                         -- CAUTION: lua index starts from 1, so we add 1 here!!!
-                        local idx = layer.keys[n_ix * gridSize + n_iy + 1]
+                        local idx = layer.keys[n_ix * gridHeight + n_iy + 1]
                         local feat_val = layer.values[idx + 1]
                         if (feat_val ~= nil) then
                             val = feat_val
@@ -158,9 +162,9 @@ for line in everyline(gridList) do
                     end
                 else
                     -- directly get layer from cache :)
-                    local layer = feature_maps[gid]
+                    local layer = feature_maps[feat_map_key]
                     -- CAUTION: lua index starts from 1, so we add 1 here!!!
-                    local idx = layer.keys[n_ix * gridSize + n_iy + 1]
+                    local idx = layer.keys[n_ix * gridHeight + n_iy + 1]
                     local feat_val = layer.values[idx + 1]
                     if (feat_val ~= nil) then
                         val = feat_val
