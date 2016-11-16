@@ -2,6 +2,7 @@ data*/
 shp/
 tif/
 img/
+test/
 playground/
 geodata/
 grid_data_pb2.py

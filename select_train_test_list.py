@@ -13,8 +13,8 @@
 """
 
 import sqlite3
-import grid_data_pb2
-from feature_db import FeatureDB
+import geogrid.grid_data_pb2
+from geogrid.feature_db import FeatureDB
 import argparse
 import random
 from progressbar import *

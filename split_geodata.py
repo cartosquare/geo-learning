@@ -15,8 +15,8 @@ from __future__ import division
 import os
 import argparse
 import multiprocessing
-from mesher import Mesher
-import grid_data_pb2
+from geogrid.mesher import Mesher
+import geogrid.grid_data_pb2
 from progressbar import *
 
 
