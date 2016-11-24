@@ -89,6 +89,7 @@ local strmatch = string.gmatch
 local sample_cnt = 0
 for line in everyline(gridList) do
     sample_cnt = sample_cnt + 1
+    print(sample_cnt)
     -- to cache features, because parse feature from protobuf format is the 
     -- bottle neck of our program!!!
     local feature_maps = {}
@@ -155,9 +156,11 @@ for line in everyline(gridList) do
 
                         -- CAUTION: lua index starts from 1, so we add 1 here!!!
                         local idx = layer.keys[n_ix * gridHeight + n_iy + 1]
-                        local feat_val = layer.values[idx + 1]
-                        if (feat_val ~= nil) then
-                            val = feat_val
+                        if (layer.values ~= nil) then
+                            local feat_val = layer.values[idx + 1]
+                            if (feat_val ~= nil) then
+                                val = feat_val
+                            end
                         end
                     end
                 else
@@ -165,9 +168,11 @@ for line in everyline(gridList) do
                     local layer = feature_maps[feat_map_key]
                     -- CAUTION: lua index starts from 1, so we add 1 here!!!
                     local idx = layer.keys[n_ix * gridHeight + n_iy + 1]
-                    local feat_val = layer.values[idx + 1]
-                    if (feat_val ~= nil) then
-                        val = feat_val
+                    if (layer.values ~= nil) then
+                        local feat_val = layer.values[idx + 1]
+                        if (feat_val ~= nil) then
+                            val = feat_val
+                        end
                     end
                 end
 
@@ -186,6 +191,7 @@ for line in everyline(gridList) do
             end
         end -- for j = -buffer, buffer do
     end -- for i = -buffer, buffer do
+    --feature_maps = nil
 end -- for line in everyline(gridList) do
 
 -- save training data

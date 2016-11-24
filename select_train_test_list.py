@@ -57,7 +57,7 @@ if __name__=='__main__':
         for i in range(0, len(layer.keys)):
             idx = layer.keys[i]
             if idx < len(layer.values): # some grid may not be recorded
-                if layer.values[idx] >= 0:
+                if layer.values[idx] > 0:
                     row = i / grid_width
                     col = i % grid_width
 
@@ -71,13 +71,18 @@ if __name__=='__main__':
         # next row
         row = feature_db.nextRow()
     print cnt
+    print len(data)
+    print idx_list[0]
+
     print 'shuffle ...'
     random.shuffle(idx_list)
+    print idx_list[0]
 
     print 'saving ...'
     train = open(args.grid_list, 'w')
     new_cnt = 0
     for i in idx_list:
+        #print(i)
         if (data[i]['val'] == 0):
             if new_cnt > not_empty_cnt:
                 continue
