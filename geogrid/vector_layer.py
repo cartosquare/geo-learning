@@ -185,9 +185,13 @@ class VectorLayer:
             for feature in data:
                 geom = feature.geometry()
                 geometry_type = geom.GetGeometryType()
-
+                
                 if geometry_type == ogr.wkbPoint or geometry_type == ogr.wkbMultiPoint:
-                    grid_val = grid_val + 1
+                    if self.user_data is None:
+                        grid_val = grid_val + 1
+                    else:
+                        weight = feature.GetFieldAsDouble(self.user_data)
+                        grid_val = grid_val + weight
                 elif geometry_type == ogr.wkbLineString or geometry_type == ogr.wkbMultiLineString:
                     clipped_geom = self.clipPolyline(clip_boundary, geom, geometry_type)
                     if clipped_geom is not None:
@@ -204,5 +208,3 @@ class VectorLayer:
                 else:
                     print 'unknow geometry type: %s' % (geometry_type)
             return grid_val
-
-    

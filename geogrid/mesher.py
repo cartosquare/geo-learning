@@ -49,14 +49,17 @@ class Mesher:
                 # opts.srs == 'epsg:3857'
                 layer.setScale(1000.0)
             print('scale', layer.scale)
+
+            # set statistic mode
+            layer.setStatisticMethod(opts.method, opts.weight_field)
         else:
             layer = RasterLayer()
             if not layer.open(opts.src, opts.ilayer, opts.format):
                 return None
-        
-        # set statistic mode
-        layer.setStatisticMethod(opts.method, opts.cell_value)
 
+            # set statistic mode
+            layer.setStatisticMethod(opts.method, opts.cell_value)
+        
         return layer
 
     def openSource(self, opts):
@@ -226,7 +229,7 @@ class Mesher:
     def make(self):
         if not self.is_ok():
             return
-        
+
         # use a progress bar to show the progress of generating grids
         cnt = 0 
         # widgets = [Percentage(), Bar('>'), ' ', Timer(), BouncingBar(), ETA(), ' ', ReverseBar('<')]

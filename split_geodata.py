@@ -34,6 +34,7 @@ def parse_commandline():
     parser.add_argument('--flip', dest='flip', type=int, help='flip y axe of grid system')
     parser.add_argument('--method', dest='method', type=str, help='method to get grid value')
     parser.add_argument('--count_key', dest='cell_value', type=int, help='raster method operator')
+    parser.add_argument('--weight_field', dest='weight_field', type=str, help='weight field for count field')
     parser.add_argument('--threads', dest='nthreads', type=int, help='number of threads')
     parser.add_argument('--xmin', dest='xmin', type=float, help="x min")
     parser.add_argument('--xmax', dest='xmax', type=float, help="x max")
