@@ -24,6 +24,7 @@ function M.parse(arg)
    cmd:option('-gridWidth',   256,     'we store gridWidth * gridHeight in a grid layer')
    cmd:option('-gridHeight',  128,     'we store gridWidth * gridHeight in a grid layer')
    cmd:option('-gridList',   '',     'grid list for training')
+   cmd:option('-useGPU',   0,     'use gpu or not')
    ------------ Fetch train test options --------------------
    cmd:option('-buffer',    12,         'how many nearby grid to included to compute')
    cmd:option('-features',       '',    'features to learn, seperated by space')
@@ -35,8 +36,7 @@ function M.parse(arg)
    cmd:option('-save',            'checkpoints', 'Directory in which to save checkpoints')
    ---------- Optimization options ----------------------
    cmd:option('-LR',              0.1,   'initial learning rate')
-   cmd:option('-momentum',        0.9,   'momentum')
-   cmd:option('-weightDecay',     1e-4,  'weight decay')
+   cmd:option('-LRD',        0,   'learning Rate Decay')
    cmd:text()
 
    local opt = cmd:parse(arg or {})

@@ -77,11 +77,26 @@ net = geo_net.toyNet(nfeatures)
 -- define the loass function, use the Mean Squared Error criterion
 criterion = nn.MSECriterion()
 
+if opt.useGPU == 1 then
+    require 'cunn'
+
+    net = net:cuda()
+    criterion = criterion:cuda()
+    trainset.data = trainset.data:cuda()
+    trainset.label = trainset.label:cuda()
+    testset.data = testset.data:cuda()
+    testset.label = testset.label:cuda()
+end
+
 -- train the neural network
 trainer = nn.StochasticGradient(net, criterion)
 trainer.learningRate = opt.LR
 trainer.maxIteration = opt.nEpochs
+trainer.learningRateDecay = opt.LRD
+
 trainer:train(trainset)
+
+torch.save('model.t7',net)
 
 -- calculate MSE and MAPE errors
 mse = 0
@@ -90,7 +105,8 @@ for i = 1, testset:size() do
     local groundtruth = testset.label[i]
     local prediction = net:forward(testset.data[i])
     mse = mse + (groundtruth[1] - prediction[1]) * (groundtruth[1] - prediction[1])
-    mape = math.abs(prediction[1] - groundtruth[1]) / groundtruth[1]
+    mape = mape + math.abs(prediction[1] - groundtruth[1]) / groundtruth[1]
+    print(groundtruth[1], prediction[1])
 end
 
 mse = mse / testset:size()
