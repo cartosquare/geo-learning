@@ -167,44 +167,71 @@ class VectorLayer:
         return multipolygon_geom
 
 
+    def geom(self, data, extent):
+        # clip boundary
+        clip_boundary = [self.scalePoint([extent[0],extent[2]]), self.scalePoint([extent[1], extent[2]]), self.scalePoint([extent[1], extent[3]]), self.scalePoint([extent[0], extent[3]])]
+
+        grid_val = 0
+        for feature in data:
+            geom = feature.geometry()
+            geometry_type = geom.GetGeometryType()
+
+            if geometry_type == ogr.wkbPoint or geometry_type == ogr.wkbMultiPoint:
+                grid_val = grid_val + 1
+            elif geometry_type == ogr.wkbLineString or geometry_type == ogr.wkbMultiLineString:
+                clipped_geom = self.clipPolyline(clip_boundary, geom, geometry_type)
+                if clipped_geom is not None:
+                    grid_val = grid_val + clipped_geom.Length()
+            elif geometry_type == ogr.wkbPolygon:
+                clipped_geom = self.clipPolygon(clip_boundary, geom, geometry_type)
+                if clipped_geom is not None:
+                    grid_val = grid_val + clipped_geom.GetArea()
+            elif geometry_type == ogr.wkbMultiPolygon:
+                for polygon in geom:
+                    clipped_geom = self.clipPolygon(clip_boundary, polygon, geometry_type)
+                    if clipped_geom is not None:
+                        grid_val = grid_val + clipped_geom.GetArea()
+            else:
+                print 'unknow geometry type: %s' % (geometry_type)
+
+        return grid_val
+
+
+    def sum(self, data, user_data):
+        grid_val = 0
+        for feature in data:
+            weight = feature.GetFieldAsDouble(user_data)
+            grid_val = grid_val + weight
+        return grid_val
+
+
+    def average(self, data, user_data):
+        grid_val = 0
+        cnt = 0
+        for feature in data:
+            weight = feature.GetFieldAsDouble(user_data)
+            grid_val = grid_val + weight
+        if cnt > 0:
+            return (grid_val / float(cnt))
+        else:
+            return grid_val
+
+
     def statistic(self, extent):
         if not self.success:
             print('layer is not opened correctly')
             return
-        # print('statistic')
+
         data = self.spatialQuery(extent)
         if data is None:
             # extent has no intersection with this data, return right now
             return None
         else:
-            # clip boundary
-            clip_boundary = [self.scalePoint([extent[0],extent[2]]), self.scalePoint([extent[1], extent[2]]), self.scalePoint([extent[1], extent[3]]), self.scalePoint([extent[0], extent[3]])]
+            if self.method == 'geom':
+                grid_val = self.geom(data, extent)
+            elif self.method == 'sum':
+                grid_val = self.sum(data, self.user_data)
+            elif self.method == 'average':
+                grid_val = self.average(data, self.user_data)
 
-            grid_val = 0
-            # calculate count/length/area/.../ of the features in filtered layer
-            for feature in data:
-                geom = feature.geometry()
-                geometry_type = geom.GetGeometryType()
-                
-                if geometry_type == ogr.wkbPoint or geometry_type == ogr.wkbMultiPoint:
-                    if self.user_data is None:
-                        grid_val = grid_val + 1
-                    else:
-                        weight = feature.GetFieldAsDouble(self.user_data)
-                        grid_val = grid_val + weight
-                elif geometry_type == ogr.wkbLineString or geometry_type == ogr.wkbMultiLineString:
-                    clipped_geom = self.clipPolyline(clip_boundary, geom, geometry_type)
-                    if clipped_geom is not None:
-                        grid_val = grid_val + clipped_geom.Length()
-                elif geometry_type == ogr.wkbPolygon:
-                    clipped_geom = self.clipPolygon(clip_boundary, geom, geometry_type)
-                    if clipped_geom is not None:
-                        grid_val = grid_val + clipped_geom.GetArea()
-                elif geometry_type == ogr.wkbMultiPolygon:
-                    for polygon in geom:
-                        clipped_geom = self.clipPolygon(clip_boundary, polygon, geometry_type)
-                        if clipped_geom is not None:
-                            grid_val = grid_val + clipped_geom.GetArea()
-                else:
-                    print 'unknow geometry type: %s' % (geometry_type)
             return grid_val

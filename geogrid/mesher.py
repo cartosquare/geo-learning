@@ -51,7 +51,7 @@ class Mesher:
             print('scale', layer.scale)
 
             # set statistic mode
-            layer.setStatisticMethod(opts.method, opts.weight_field)
+            layer.setStatisticMethod(opts.method, opts.field)
         else:
             layer = RasterLayer()
             if not layer.open(opts.src, opts.ilayer, opts.format):
