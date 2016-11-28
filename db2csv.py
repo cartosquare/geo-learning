@@ -72,8 +72,11 @@ if __name__=='__main__':
 
                     val = layer.values[idx]
                     if val == args.nodata:
-                        coord = grids.grid_coordinate(row, col, irow, icol)
-                        [lon, lat] = proj_util.lambert2lonlat(coord)
-                        f.write('%f,%f,%d,%d,%d,%d,%f\n' % (lon, lat, row, col, irow, icol, val))
+                        continue
+
+                    coord = grids.grid_coordinate(row, col, irow, icol)
+                    [lon, lat] = proj_util.lambert2lonlat(coord)
+                    
+                    f.write('%f,%f,%d,%d,%d,%d,%f\n' % (lon, lat, row, col, irow, icol, val))
     f.close()
     
