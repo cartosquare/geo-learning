@@ -15,9 +15,12 @@
 import sqlite3
 import geogrid.grid_data_pb2 as grid_data_pb2
 from geogrid.feature_db import FeatureDB
+from geogrid.lambert_grid import LambertGrid
+from geogrid import proj_util
 import argparse
 import random
 from progressbar import *
+
 
 if __name__=='__main__':
     parser = argparse.ArgumentParser(description='Feed data to grid.')
@@ -38,7 +41,11 @@ if __name__=='__main__':
     grid_width = grid_info[3]
     grid_height = grid_info[4]
     print(grid_width, grid_height)
-    
+    extent = feature_db.queryLambertExtent()
+    print 'extent(minx, maxx, miny, maxy)', extent
+
+    grid = LambertGrid(args.resolution, extent[0], extent[1], extent[2], extent[3], gridInfo[2])
+
     cnt = 0
     not_empty_cnt = 0
     data = []
@@ -61,7 +68,11 @@ if __name__=='__main__':
                     row = i / grid_width
                     col = i % grid_width
 
-                    data.append({'z': z, 'x': x, 'y': y, 'row': row, 'col': col, 'val': layer.values[idx]})
+                    coord = grid.grid_coordinate(int(x), int(y), int(row), int(col))
+                    print coord
+                    [lon, lat] = proj_util.lambert2lonlat(coord)
+
+                    data.append({'z': z, 'x': x, 'y': y, 'row': row, 'col': col, 'lon': lon, 'lat': lat, 'val': layer.values[idx]})
                     idx_list.append(cnt)
 
                     cnt = cnt + 1
@@ -72,11 +83,9 @@ if __name__=='__main__':
         row = feature_db.nextRow()
     print cnt
     print len(data)
-    print idx_list[0]
-
+    print 'not empty count: ', not_empty_cnt
     print 'shuffle ...'
     random.shuffle(idx_list)
-    print idx_list[0]
 
     print 'saving ...'
     train = open(args.grid_list, 'w')
@@ -88,7 +97,7 @@ if __name__=='__main__':
                 continue
             new_cnt = new_cnt + 1
 
-        train.write('%s %s %s %d %d %f\n' % (data[i]['z'], data[i]['x'], data[i]['y'], data[i]['row'], data[i]['col'], data[i]['val']))
+        train.write('%f %f %s %s %s %d %d %f\n' % (data[i]['lon'], data[i]['lat'], data[i]['z'], data[i]['x'], data[i]['y'], data[i]['row'], data[i]['col'], data[i]['val']))
     train.close()
     
     print 'finish.'
