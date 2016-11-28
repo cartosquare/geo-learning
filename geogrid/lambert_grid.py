@@ -180,3 +180,17 @@ class LambertGrid:
         else:
             return self.grid_area(level - 1) / 4.0
         
+    def grid_coordinate(self, row, col, srow, scol):
+        x0 = self.world_originalx + col * self.extent_x
+        xx = x0 + (scol + 0.5) * self.res_x
+
+        if self.flip:
+            y1 = self.world_originaly - row * self.extent_y
+            y0 = y1 - self.extent_y
+            yy = y0 - srow * self.res_y
+            yy = yy - 0.5 * self.res_y
+        else:
+            y0 = self.world_originaly + row * self.extent_y
+            yy = y0 + (srow + 0.5) * self.res_y
+            
+        return [xx, yy]
