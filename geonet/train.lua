@@ -83,7 +83,7 @@ testset.label:div(stdv)
 
 -- define neural network
 local geo_net = require 'geonet/geo_net'
-net = geo_net.linearNet(nfeatures)
+net = geo_net.toyNet(nfeatures)
 
 -- define the loass function, use the Mean Squared Error criterion
 criterion = nn.MSECriterion()
@@ -116,11 +116,11 @@ for i = 1, testset:size() do
     local groundtruth = testset.label[i]
     local prediction = net:forward(testset.data[i])
     mse = mse + (groundtruth[1] - prediction[1]) * (groundtruth[1] - prediction[1])
-    mape = mape + math.abs(prediction[1] - groundtruth[1]) / groundtruth[1]
-    print(groundtruth[1], prediction[1])
+    mae = mape + math.abs(prediction[1] - groundtruth[1])
+    --print(groundtruth[1], prediction[1])
 end
 
 mse = mse / testset:size()
 mape = mape / testset:size()
 print('mse: ', mse)
-print('mape: ', mape)
+print('mae: ', mape)
