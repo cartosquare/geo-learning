@@ -70,9 +70,20 @@ for i = 1, nfeatures do -- over each channel
     testset.data[{ {}, {i}, {}, {}  }]:div(stdv[i]) -- std scaling
 end
 
+-- normalize label
+mean = trainset.label:mean()
+print('Label mean ' .. mean)
+trainset.label:add(-mean)
+testset.label:add(-mean)
+
+stdv = trainset.label:std()
+print('Label stdv ' .. stdv)
+trainset.label:div(stdv)
+testset.label:div(stdv)
+
 -- define neural network
 local geo_net = require 'geonet/geo_net'
-net = geo_net.toyNet(nfeatures)
+net = geo_net.linearNet(nfeatures)
 
 -- define the loass function, use the Mean Squared Error criterion
 criterion = nn.MSECriterion()
