@@ -9,6 +9,14 @@ from matplotlib.pyplot import savefig
 from config import X_train_file, y_train_file, X_test_file, y_test_file
 
 
+def mean_absolute_error(preds, dtrain):
+    labels = dtrain.get_label()
+    dim = labels.shape
+
+    error_val = np.abs(labels - preds).sum() / float(dim[0])
+    return 'error', error_val
+
+
 def run_model(param):
     '''
     param = {
@@ -41,7 +49,7 @@ def run_model(param):
 
     # train
     watchlist = [(xgtrain, 'train'), (xgtest, 'test')]
-    xgb.train(param, xgtrain, num_rounds, watchlist, feval=mean_absolute_percentage_error)
+    xgb.train(param, xgtrain, num_rounds, watchlist, feval=mean_absolute_error)
 
 
 def score(param):
@@ -50,7 +58,7 @@ def score(param):
     num_rounds = int(param['num_round'])
 
     xgtrain = xgb.DMatrix(X_train, label=y_train)
-    res = xgb.cv(param, xgtrain, num_rounds, nfold=5, metrics={'error'}, seed=0, feval='rmse')
+    res = xgb.cv(param, xgtrain, num_rounds, nfold=5, seed=0)
 
     mape = res.tail(1).iloc[0][0]
     print mape
@@ -83,9 +91,10 @@ def optimize(trials):
         'silent': 1
     }
 
-    best = fmin(score, space2, algo=tpe.suggest, trials=trials, max_evals=2)
+    best = fmin(score, space2, algo=tpe.suggest, trials=trials, max_evals=200)
 
     return best
+
 
 # loading features
 X_train_file = 'geodata/poi_data/x_train.pkl'
@@ -113,6 +122,7 @@ best_param = optimize(trials)
 run_model(best_param)
 print best_param
 
+"""
 parameters = ['eta', 'gamma', 'min_child_weight', 'max_depth', 'subsample', 'colsample_bytree', 'num_round']
 # parameters = ['eta', 'lambda', 'alpha', 'lambda_bias', 'num_round']
 cols = len(parameters)
@@ -129,3 +139,4 @@ for i, val in enumerate(parameters):
 learn_fig = './learn.png'
 savefig(learn_fig)
 plt.show()
+"""
