@@ -72,7 +72,7 @@ end
 
 -- define neural network
 local geo_net = require 'geonet/geo_net'
-net = geo_net.linearNet(nfeatures)
+net = geo_net.CNN(nfeatures)
 
 -- define the loass function, use the Mean Squared Error criterion
 criterion = nn.MSECriterion()

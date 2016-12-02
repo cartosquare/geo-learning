@@ -36,8 +36,9 @@ function M.parse(arg)
    ------------- Checkpointing options ---------------
    cmd:option('-save',            'checkpoints', 'Directory in which to save checkpoints')
    ---------- Optimization options ----------------------
-   cmd:option('-LR',              0.1,   'initial learning rate')
-   cmd:option('-LRD',        0,   'learning Rate Decay')
+   cmd:option('-LR',              0.01,   'initial learning rate')
+   cmd:option('-LRD',        0.1,   'learning Rate Decay')
+   cmd:option('-momentum', 0.9, 'momentum')
    cmd:text()
 
    local opt = cmd:parse(arg or {})
