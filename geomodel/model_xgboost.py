@@ -4,9 +4,10 @@ import cPickle
 from hyperopt import hp
 from hyperopt import fmin, tpe, Trials
 import xgboost as xgb
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import savefig
-from config import X_train_file, y_train_file, X_test_file, y_test_file
 
 
 def mean_absolute_error(preds, dtrain):
@@ -49,7 +50,8 @@ def run_model(param):
 
     # train
     watchlist = [(xgtrain, 'train'), (xgtest, 'test')]
-    xgb.train(param, xgtrain, num_rounds, watchlist, feval=mean_absolute_error)
+    #xgb.train(param, xgtrain, num_rounds, watchlist, feval=mean_absolute_error)
+    xgb.train(param, xgtrain, num_rounds, watchlist)
 
 
 def score(param):
@@ -81,8 +83,8 @@ def optimize(trials):
     space2 = {
         'booster': 'gbtree',
         'objective': 'reg:linear',
-        'eta': hp.quniform('eta', 0.01, 1, 0.01),
-        'gamma': hp.quniform('gamma', 0, 2, 0.1),
+        'eta': hp.quniform('eta', 0.0001, 0.1, 0.0001),
+        'gamma': hp.quniform('gamma', 1, 10, 0.1),
         'min_child_weight': hp.quniform('min_child_weight', 0, 10, 1),
         'max_depth': hp.quniform('max_depth', 1, 10, 1),
         'subsample': hp.quniform('subsample', 0.5, 1, 0.1),
@@ -122,7 +124,6 @@ best_param = optimize(trials)
 run_model(best_param)
 print best_param
 
-"""
 parameters = ['eta', 'gamma', 'min_child_weight', 'max_depth', 'subsample', 'colsample_bytree', 'num_round']
 # parameters = ['eta', 'lambda', 'alpha', 'lambda_bias', 'num_round']
 cols = len(parameters)
@@ -134,9 +135,8 @@ for i, val in enumerate(parameters):
     xs, ys = zip(*sorted(zip(xs, ys)))
     axes[i].scatter(xs, ys, s=20, linewidth=0.01, alpha=0.25, c=cmap(float(i) / len(parameters)))
     axes[i].set_title(val)
-    axes[i].set_ylim([0.1, 0.4])
+    axes[i].set_ylim([50, 90])
 
 learn_fig = './learn.png'
 savefig(learn_fig)
-plt.show()
-"""
+#plt.show()
