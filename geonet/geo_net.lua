@@ -27,16 +27,19 @@ function M.CNN(input_channels)
     net:add(nn.View(input_channels * 6 * 1 * 1))            -- reshapes to flatten array
 
     net:add(nn.Linear(input_channels * 6 * 1 * 1, input_channels * 6 * 1 * 1))     -- fully connected layer
-    net:add(nn.ReLU())          -- non-linearity 
-    net:add(nn.Dropout(0.9))
+    net:add(nn.BatchNormalization(input_channels * 6))
+    net:add(nn.PReLU())          -- non-linearity 
+    net:add(nn.Dropout(0.2))
 
     net:add(nn.Linear(input_channels * 6 * 1 * 1, input_channels * 6 * 1 * 1))
-    net:add(nn.ReLU())          -- non-linearity 
-    net:add(nn.Dropout(0.7))
+    net:add(nn.BatchNormalization(input_channels * 6))
+    net:add(nn.PReLU())          -- non-linearity 
+    net:add(nn.Dropout(0.2))
 
     net:add(nn.Linear(input_channels * 6 * 1 * 1, input_channels * 6 * 1 * 1))
-    net:add(nn.ReLU())          -- non-linearity 
-    net:add(nn.Dropout(0.5))
+    net:add(nn.BatchNormalization(input_channels * 6))
+    net:add(nn.PReLU())          -- non-linearity 
+    net:add(nn.Dropout(0.2))
 
     net:add(nn.Linear(input_channels * 6 * 1 * 1, 1))   -- output size is 1
     return net
