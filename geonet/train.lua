@@ -70,20 +70,9 @@ for i = 1, nfeatures do -- over each channel
     testset.data[{ {}, {i}, {}, {}  }]:div(stdv[i]) -- std scaling
 end
 
--- normalize label
-mean = trainset.label:mean()
-print('Label mean ' .. mean)
-trainset.label:add(-mean)
-testset.label:add(-mean)
-
-stdv = trainset.label:std()
-print('Label stdv ' .. stdv)
-trainset.label:div(stdv)
-testset.label:div(stdv)
-
 -- define neural network
 local geo_net = require 'geonet/geo_net'
-net = geo_net.toyNet(nfeatures)
+net = geo_net.linearNet(nfeatures)
 
 -- define the loass function, use the Mean Squared Error criterion
 criterion = nn.MSECriterion()
@@ -107,20 +96,33 @@ trainer.learningRateDecay = opt.LRD
 
 trainer:train(trainset)
 
-torch.save('model.t7',net)
+torch.save('model.t7', net)
 
 -- calculate MSE and MAPE errors
 mse = 0
+mae = 0
 mape = 0
+e = 2.718281828459
 for i = 1, testset:size() do
     local groundtruth = testset.label[i]
     local prediction = net:forward(testset.data[i])
-    mse = mse + (groundtruth[1] - prediction[1]) * (groundtruth[1] - prediction[1])
-    mae = mape + math.abs(prediction[1] - groundtruth[1])
-    --print(groundtruth[1], prediction[1])
+    -- mse = mse + (groundtruth[1] - prediction[1]) * (groundtruth[1] - prediction[1])
+    mse = mse + criterion:forward(prediction, groundtruth)
+    --mae = mae + math.abs(math.pow(e, prediction[1]) - math.pow(e, groundtruth[1]))
+    --mape = mape + math.abs(math.pow(e, prediction[1]) - math.pow(e, groundtruth[1])) / math.pow(e, groundtruth[1])
+    mae = mae + math.abs(prediction[1] - groundtruth[1])
+    mape = mape + math.abs(prediction[1] - groundtruth[1]) / groundtruth[1]
+
+    if i % 100 == 0 then
+        --print(math.pow(e, groundtruth[1]), math.pow(e,prediction[1]))
+        print(groundtruth[1], prediction[1])
+    end
 end
 
 mse = mse / testset:size()
+mae = mae / testset:size()
 mape = mape / testset:size()
+
 print('mse: ', mse)
-print('mae: ', mape)
+print('mae: ', mae)
+print('mape: ', mape)
