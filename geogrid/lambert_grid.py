@@ -69,7 +69,8 @@ class LambertGrid:
         self.grid_width = 256
         self.grid_height = 128
         
-        self.max_val_index = self.grid_width * self.grid_height - 1
+        #self.max_val_index = (self.grid_width * self.grid_height - 1)
+        self.max_val_index = (self.grid_width * self.grid_height) * 500
 
         # world original
         self.world_originalx = 0
