@@ -57,9 +57,6 @@ if opt.useGPU == 1 then
 
     net = net:cuda()
     criterion = criterion:cuda()
-
-    testset.data = testset.data:cuda()
-    testset.label = testset.label:cuda()
 end
 
 
@@ -71,12 +68,13 @@ local optmState = {
     momentum = opt.momentum
     }
 print(optmState)
-print(trainset.data:size(1) / opt.batchSize)
 
 local nbatchs = math.ceil(trainset.data:size(1) / opt.batchSize)
 print('nbatchs', nbatchs)
 
 local batchSize = opt.batchSize
+local recent_error = 100
+local no_good_cnt = 0
 for epoch = 0, opt.nEpochs do
     local avg_loss = 0 
     for batch = 1, nbatchs do
@@ -128,7 +126,20 @@ for epoch = 0, opt.nEpochs do
         end
         optim.sgd(feval, params, optimState)
     end
-    print(string.format('after %d epchos, J(x) = %f', epoch, avg_loss / nbatchs))
+
+    current_error = avg_loss / nbatchs
+    if current_error < recent_error then
+        recent_error = current_error
+        no_good_cnt = 0
+        print(string.format('after %d epchos, new best result J(x) = %f *', epoch, current_error))
+    else
+        no_good_cnt = no_good_cnt + 1
+        print(string.format('after %d epchos, J(x) = %f', epoch, current_error))
+    end
+    
+    if no_good_cnt > 10 then
+        break
+    end
 end
 
 -- calculate MSE and MAPE errors
@@ -138,19 +149,48 @@ mape = 0
 e = 2.718281828459
 
 ntests = testset.data:size(1)
-for i = 1, ntests do
-    local groundtruth = testset.label[i]
-    local prediction = net:forward(testset.data[i])
-    -- mse = mse + (groundtruth[1] - prediction[1]) * (groundtruth[1] - prediction[1])
-    mse = mse + criterion:forward(prediction, groundtruth)
-    mae = mae + math.abs(math.pow(e, prediction[1]) - math.pow(e, groundtruth[1]))
-    mape = mape + math.abs(math.pow(e, prediction[1]) - math.pow(e, groundtruth[1])) / math.pow(e, groundtruth[1])
-    --mae = mae + math.abs(prediction[1] - groundtruth[1])
-    --mape = mape + math.abs(prediction[1] - groundtruth[1]) / groundtruth[1]
 
-    if i % 100 == 0 then
-        print(math.pow(e, groundtruth[1]), math.pow(e,prediction[1]))
-        --print(groundtruth[1], prediction[1])
+local nbatchs_test = math.ceil(testset.data:size(1) / batchSize)
+print('#test batchs', nbatchs_test)
+
+for batch = 1, nbatchs_test do
+    start_idx = batchSize * (batch - 1) + 1
+    end_idx = batchSize * batch
+
+    if end_idx > testset.data:size(1) then
+        end_idx = testset.data:size(1)
+    end
+
+    batchInputs = torch.DoubleTensor(end_idx - start_idx + 1, nfeatures, 9, 9)
+    batchLabels = torch.DoubleTensor(end_idx - start_idx + 1)
+
+    local cnt = 0
+    for s = start_idx, end_idx do
+        cnt = cnt + 1
+
+        batchInputs[cnt] = testset.data[s]
+        batchLabels[cnt] = testset.label[s]
+    end
+
+    if opt.useGPU == 1 then
+        batchInputs = batchInputs:cuda()
+        batchLabels = batchLabels:cuda()
+    end
+
+    local predictions = net:forward(batchInputs)
+    for i = 1,cnt do
+        local predict = predictions[i][1]
+        local groundtruth = batchLabels[i]
+
+        --mse = mse + criterion:forward(predictions[i], batchLabels[i])
+        mse = mse + (groundtruth - predict) * (groundtruth - predict)
+        mae = mae + math.abs(math.pow(e, predict) - math.pow(e, groundtruth))
+        mape = mape + math.abs(math.pow(e, predict) - math.pow(e, groundtruth)) / math.pow(e, groundtruth)
+        --mape = mape + math.abs(prediction[1] - groundtruth[1]) / groundtruth[1]
+        if i % 50 == 0 then
+            print(math.pow(e, groundtruth), math.pow(e, predict))
+            --print(groundtruth[1], prediction[1])
+        end
     end
 end
 
