@@ -55,6 +55,14 @@ end
 print('nfeatuers: ', nfeat)
 print(features)
 
+-- open label db
+print('label ' .. opt.label)
+local labeldb = nil
+if opt.label ~= '' then
+    print('open labeldb')
+    labeldb = sqlite3.open(opt.featDir .. opt.label .. '.sqlite3')
+end
+
 -- open train list and write training data
 -- train data size
 local samples = 0
@@ -89,7 +97,7 @@ local strmatch = string.gmatch
 local sample_cnt = 0
 for line in everyline(gridList) do
     sample_cnt = sample_cnt + 1
-    print(sample_cnt)
+    --print(sample_cnt)
     -- to cache features, because parse feature from protobuf format is the 
     -- bottle neck of our program!!!
     local feature_maps = {}
@@ -109,16 +117,73 @@ for line in everyline(gridList) do
     local iy = tonumber(keys[5])
     local label = tonumber(keys[6])
 
-    -- sample label
+    -- global index of this sample
+    local ox = x * gridHeight + ix
+    local oy = y * gridWidth + iy
+
+    if opt.label ~= '' then
+        
+        -- sample label
+        local label_maps = {}
+        local label_val = 0.0
+        for i = -buffer, buffer do
+            for j = -buffer, buffer do
+                -- global index of nearby grid
+                local n_ox = ox + i
+                local n_oy = oy + j
+
+                -- global/relative index
+                local n_x = floor(n_ox / gridHeight)
+                local n_ix = n_ox % gridHeight
+
+                local n_y = floor(n_oy / gridWidth)
+                local n_iy = n_oy % gridWidth
+
+                -- grid id
+                local gid = z .. '_' .. tostring(n_x) .. '_' .. tostring(n_y)
+                local label_map_key = opt.label .. '_' .. gid
+                local val = 0.0
+                if (label_maps[label_map_key] == nil) then
+                    for row in labeldb:nrows(string.format("SELECT DATA from feature WHERE ID = '%s'", gid)) do
+                        local bin = row.DATA
+                        local msg = grid_data.GridData():Parse(bin)
+                        local layer = msg.layers[1]
+                        -- cache this layer
+                        label_maps[label_map_key] = layer
+
+                        -- CAUTION: lua index starts from 1, so we add 1 here!!!
+                        local idx = layer.keys[n_ix * gridHeight + n_iy + 1]
+                        if (layer.values ~= nil) then
+                            local feat_val = layer.values[idx + 1]
+                            if (feat_val ~= nil) then
+                                val = feat_val
+                            end
+                        end
+                    end
+                else
+                    -- directly get layer from cache :)
+                    local layer = label_maps[label_map_key]
+                    -- CAUTION: lua index starts from 1, so we add 1 here!!!
+                    local idx = layer.keys[n_ix * gridWidth + n_iy + 1]
+                    if (layer.values ~= nil) then
+                        local feat_val = layer.values[idx + 1]
+                        if (feat_val ~= nil) then
+                            val = feat_val
+                        end
+                    end
+                end
+                label_val = label_val + val
+            end
+        end
+        label = label_val
+    end
+
+    print('label value', label)
     if sample_cnt <= train_num then
         train_label[sample_cnt][1] = label
     else
         test_label[sample_cnt - train_num][1] = label
     end
-
-    -- global index of this sample
-    local ox = x * gridHeight + ix
-    local oy = y * gridWidth + iy
 
     --local t2 = os.time()
     --local t3 = 0
@@ -167,7 +232,7 @@ for line in everyline(gridList) do
                     -- directly get layer from cache :)
                     local layer = feature_maps[feat_map_key]
                     -- CAUTION: lua index starts from 1, so we add 1 here!!!
-                    local idx = layer.keys[n_ix * gridHeight + n_iy + 1]
+                    local idx = layer.keys[n_ix * gridWidth + n_iy + 1]
                     if (layer.values ~= nil) then
                         local feat_val = layer.values[idx + 1]
                         if (feat_val ~= nil) then
