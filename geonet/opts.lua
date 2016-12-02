@@ -28,6 +28,7 @@ function M.parse(arg)
    ------------ Fetch train test options --------------------
    cmd:option('-buffer',    12,         'how many nearby grid to included to compute')
    cmd:option('-features',       '',    'features to learn, seperated by space')
+   cmd:option('-label',     '', 'label data')
    cmd:option('-featDir',       'data/',    'directory that contains all the features')
    ------------- Training options --------------------
    cmd:option('-nEpochs',         10,       'Number of total epochs to run')
