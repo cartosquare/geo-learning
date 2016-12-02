@@ -27,6 +27,7 @@ if __name__=='__main__':
     parser.add_argument('db', metavar='db', type=str, help='source data file to read')
     parser.add_argument('-r', dest='resolution', type=str, help='resolution name')
     parser.add_argument('-o', dest='grid_list', type=str, help='output grid list')
+    parser.add_argument('-d', dest='debug', type=int, help='output coordinates or not')
     parser.add_argument('-all', dest='all', type=int, help='output all the grids')
     parser.add_argument('--xmin', dest='xmin', type=float, help="x min")
     parser.add_argument('--xmax', dest='xmax', type=float, help="x max")
@@ -35,6 +36,8 @@ if __name__=='__main__':
 
     # parse arguments
     args = parser.parse_args()
+    if args.debug is None:
+        args.debug = 0
 
     feature_db = FeatureDB(args.db)
     grid_info = feature_db.queryGridInfo()
@@ -44,7 +47,7 @@ if __name__=='__main__':
     extent = feature_db.queryLambertExtent()
     print 'extent(minx, maxx, miny, maxy)', extent
 
-    grid = LambertGrid(args.resolution, extent[0], extent[1], extent[2], extent[3], gridInfo[2])
+    grid = LambertGrid(int(args.resolution), extent[0], extent[1], extent[2], extent[3], grid_info[2])
 
     cnt = 0
     not_empty_cnt = 0
@@ -69,7 +72,6 @@ if __name__=='__main__':
                     col = i % grid_width
 
                     coord = grid.grid_coordinate(int(x), int(y), int(row), int(col))
-                    print coord
                     [lon, lat] = proj_util.lambert2lonlat(coord)
 
                     data.append({'z': z, 'x': x, 'y': y, 'row': row, 'col': col, 'lon': lon, 'lat': lat, 'val': layer.values[idx]})
@@ -97,7 +99,11 @@ if __name__=='__main__':
                 continue
             new_cnt = new_cnt + 1
 
-        train.write('%f %f %s %s %s %d %d %f\n' % (data[i]['lon'], data[i]['lat'], data[i]['z'], data[i]['x'], data[i]['y'], data[i]['row'], data[i]['col'], data[i]['val']))
+        if args.debug == 1:
+            train.write('%f %f %s %s %s %d %d %f\n' % (data[i]['lon'], data[i]['lat'], data[i]['z'], data[i]['x'], data[i]['y'], data[i]['row'], data[i]['col'], data[i]['val']))
+        else:
+            train.write('%s %s %s %d %d %f\n' % (data[i]['z'], data[i]['x'], data[i]['y'], data[i]['row'], data[i]['col'], data[i]['val']))
+
     train.close()
     
     print 'finish.'
