@@ -17,10 +17,12 @@ function M.CNN(input_channels)
     net = nn.Sequential()
     -- 3x3 convolution kernel
     net:add(nn.SpatialConvolution(input_channels, input_channels * 3, 2, 2)) 
+    --nn.SpatialBatchNormalization(input_channels * 3)
     net:add(nn.ReLU())                                      -- non-linearity 
     net:add(nn.SpatialMaxPooling(2,2,2,2))                  -- 2x2 windows max-pooling
 
     net:add(nn.SpatialConvolution(input_channels * 3, input_channels * 6, 2, 2)) 
+    --nn.SpatialBatchNormalization(input_channels * 6)
     net:add(nn.ReLU())                                      -- non-linearity 
     net:add(nn.SpatialMaxPooling(2,2,2,2))                  -- 2x2 windows max-pooling
 
@@ -28,18 +30,18 @@ function M.CNN(input_channels)
 
     net:add(nn.Linear(input_channels * 6 * 1 * 1, input_channels * 6 * 1 * 1))     -- fully connected layer
     net:add(nn.BatchNormalization(input_channels * 6))
-    net:add(nn.PReLU())          -- non-linearity 
-    net:add(nn.Dropout(0.2))
+    net:add(nn.ReLU())          -- non-linearity 
+    net:add(nn.Dropout(0.4))
 
     net:add(nn.Linear(input_channels * 6 * 1 * 1, input_channels * 6 * 1 * 1))
     net:add(nn.BatchNormalization(input_channels * 6))
-    net:add(nn.PReLU())          -- non-linearity 
-    net:add(nn.Dropout(0.2))
+    net:add(nn.ReLU())          -- non-linearity 
+    net:add(nn.Dropout(0.4))
 
     net:add(nn.Linear(input_channels * 6 * 1 * 1, input_channels * 6 * 1 * 1))
     net:add(nn.BatchNormalization(input_channels * 6))
-    net:add(nn.PReLU())          -- non-linearity 
-    net:add(nn.Dropout(0.2))
+    net:add(nn.ReLU())          -- non-linearity 
+    net:add(nn.Dropout(0.4))
 
     net:add(nn.Linear(input_channels * 6 * 1 * 1, 1))   -- output size is 1
     return net
@@ -134,8 +136,10 @@ function M.linearNet(input_channels)
 
     net:add(nn.View(input_channels * 9 * 9))            -- reshapes to flatten array
     net:add(nn.Linear(input_channels * 9 * 9, input_channels * 9 * 9))     -- fully connected layer
+    net:add(nn.BatchNormalization(input_channels * 9 * 9))
     net:add(nn.ReLU())          -- non-linearity 
-    
+    net:add(nn.Dropout(0.5))
+
     net:add(nn.Linear(input_channels * 9 * 9, 1))   -- output size is 1
     return net
 end

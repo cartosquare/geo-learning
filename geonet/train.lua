@@ -2,7 +2,7 @@
 /***************************************************************************
  train
                                  training/tesing script
- train and test
+ The training loop and learning rate schedule
                               -------------------
         begin                : 2016-11-3
         copyright            : (C) 2016 by GeoHey
@@ -10,119 +10,151 @@
  ***************************************************************************/
 --]]
 
-require 'torch'
-require 'nn'
-require 'math'
+local optim = require 'optim'
 
--- parse command line
-local opts = require 'geonet/opts'
-local opt = opts.parse(arg)
+local M = {}
+local Trainer = torch.class('geonet.Trainer', M)
 
--- loading train/test sets
-trainset = torch.load(opt.trainSet)
-testset = torch.load(opt.testSet)
+function Trainer:__init(model, criterion, opt)
+   self.model = model
+   self.criterion = criterion
+   self.optimState = {
+      learningRate = opt.LR,
+      learningRateDecay = 0.0,
+      momentum = opt.momentum,
+      --nesterov = true,
+      --dampening = 0.0,
+      weightDecay = opt.weightDecay,
+   }
+   print('initial optimate state', self.optimState)
+   self.opt = opt
+   self.useGPU = opt.useGPU
+   self.params, self.gradParams = model:getParameters()
+end
 
--- convert train/test sets as objects
-setmetatable(trainset, 
-    {__index = function(t, i) 
-                    return {t.data[i], t.label[i]} 
-                end}
-);
+function Trainer:train(epoch, dataloader)
+   -- Trains the model for a single epoch
+   self.optimState.learningRate = self:learningRate(epoch)
+   --print('learningRate', self.optimState.learningRate)
+   
+   local timer = torch.Timer()
 
-function trainset:size() 
-    return self.data:size(1) 
+   local function feval()
+      return self.criterion.output, self.gradParams
+   end
+
+   local trainSize = dataloader:trainSize()
+   local mseSum, maeSum, mapeSum, lossSum = 0.0, 0.0, 0.0, 0.0
+   local N = 0
+
+   print('=> Training epoch # ' .. epoch)
+   -- set the batch norm to training mode
+   self.model:training()
+   for nbatch = 1, trainSize do
+      self.input, self.target = dataloader:trainBatch(nbatch)
+      if self.useGPU == 1 then
+        self.input = self.input:cuda()
+        self.target = self.target:cuda()
+     end
+
+      local output = self.model:forward(self.input):float()
+      local batchSize = output:size(1)
+      local loss = self.criterion:forward(self.model.output, self.target)
+
+      self.model:zeroGradParameters()
+      self.criterion:backward(self.model.output, self.target)
+      self.model:backward(self.input, self.criterion.gradInput)
+
+      optim.sgd(feval, self.params, self.optimState)
+
+      local mse, mae, mape = self:computeScore(output, self.target)
+      mseSum = mseSum + mse * batchSize
+      maeSum = maeSum + mae * batchSize
+      mapeSum = mapeSum + mape * batchSize
+      lossSum = lossSum + loss * batchSize
+
+      N = N + batchSize
+
+      print((' | Epoch: [%d][%d/%d]    Time %.3f  Err %1.4f  mse %7.3f  mae %7.3f mape %7.3f'):format(
+         epoch, nbatch, trainSize, timer:time().real, loss, mse, mae, mape))
+
+      -- check that the storage didn't get changed do to an unfortunate getParameters call
+      assert(self.params:storage() == self.model:parameters()[1]:storage())
+
+      timer:reset()
+   end
+
+   print((' * Finished epoch # %d     mse: %7.3f  mae: %7.3f mape: %7.3f loss: %7.3f\n'):format(
+      epoch, mseSum / N, maeSum / N, mapeSum / N, lossSum / N))
+
+   return mseSum / N, maeSum / N, mapeSum / N, lossSum / N
+end
+
+function Trainer:test(epoch, dataloader)
+   local timer = torch.Timer()
+
+   local testSize = dataloader:testSize()
+
+   local mseSum, maeSum, mapeSum, lossSum = 0.0, 0.0, 0.0, 0.0
+   local N = 0
+
+   self.model:evaluate()
+   for nbatch = 1, testSize do
+      self.input, self.target = dataloader:validateBatch(nbatch)
+      if self.useGPU == 1 then
+        self.input = self.input:cuda()
+        self.target = self.target:cuda()
+     end
+
+      local output = self.model:forward(self.input):float()
+      local batchSize = output:size(1)
+      local loss = self.criterion:forward(self.model.output, self.target)
+
+      local mse, mae, mape = self:computeScore(output, self.target)
+      mseSum = mseSum + mse * batchSize
+      maeSum = maeSum + mae * batchSize
+      mapeSum = mapeSum + mape * batchSize
+      lossSum = lossSum + loss * batchSize
+
+      N = N + batchSize
+
+      print((' | Test: [%d][%d/%d]    Time %.3f  mse %7.3f mae %7.3f mape %7.3f loss %7.3f'):format(
+         epoch, nbatch, testSize, timer:time().real, mseSum / N, maeSum / N, mapeSum / N, lossSum / N))
+
+      timer:reset()
+   end
+   self.model:training()
+
+   print((' * Finished epoch # %d     mse: %7.3f  mae: %7.3f mape: %7.3f\n'):format(
+      epoch, mseSum / N, maeSum / N, mapeSum / N))
+
+   return mseSum / N, maeSum / N, mapeSum / N
 end
 
 
-setmetatable(testset, 
-    {__index = function(t, i) 
-                    return {t.data[i], t.label[i]} 
-                end}
-);
+function Trainer:computeScore(output, target)
+   local batchSize = output:size(1)
+   e = 2.718281828459
+   mse, mae, mape = 0.0, 0.0, 0.0
+   for i = 1, batchSize do
+        local predict = output[i][1]
+        local groundtruth = target[i]
 
-function testset:size() 
-    return self.data:size(1) 
-end
-
--- summary
-print('trainSet size: ', trainset:size())
-print('testSet size: ', testset:size())
-
--- parse feature names
-local nfeatures = trainset.data:size(2)
-print('feature size: ', nfeatures)
-
--- normalize train/test: make data to have a mean of 0.0 and standard-deviation of 1.0
-mean = {} -- store the mean, to normalize the test set in the future
-stdv  = {} -- store the standard-deviation for the future
-for i = 1, nfeatures do -- over each channel
-    mean[i] = trainset.data[{ {}, {i}, {}, {}  }]:mean() -- mean estimation
-    print('Channel ' .. i .. ', Mean: ' .. mean[i])
-    trainset.data[{ {}, {i}, {}, {}  }]:add(-mean[i]) -- mean subtraction
-    
-    stdv[i] = trainset.data[{ {}, {i}, {}, {}  }]:std() -- std estimation
-    print('Channel ' .. i .. ', Standard Deviation: ' .. stdv[i])
-    trainset.data[{ {}, {i}, {}, {}  }]:div(stdv[i]) -- std scaling
-end
--- the same operation to test set
-for i = 1, nfeatures do -- over each channel
-    testset.data[{ {}, {i}, {}, {}  }]:add(-mean[i]) -- mean subtraction    
-    testset.data[{ {}, {i}, {}, {}  }]:div(stdv[i]) -- std scaling
-end
-
--- define neural network
-local geo_net = require 'geonet/geo_net'
-net = geo_net.CNN(nfeatures)
-
--- define the loass function, use the Mean Squared Error criterion
-criterion = nn.MSECriterion()
-
-if opt.useGPU == 1 then
-    require 'cunn'
-
-    net = net:cuda()
-    criterion = criterion:cuda()
-    trainset.data = trainset.data:cuda()
-    trainset.label = trainset.label:cuda()
-    testset.data = testset.data:cuda()
-    testset.label = testset.label:cuda()
-end
-
--- train the neural network
-trainer = nn.StochasticGradient(net, criterion)
-trainer.learningRate = opt.LR
-trainer.maxIteration = opt.nEpochs
-trainer.learningRateDecay = opt.LRD
-
-trainer:train(trainset)
-
-torch.save('model.t7', net)
-
--- calculate MSE and MAPE errors
-mse = 0
-mae = 0
-mape = 0
-e = 2.718281828459
-for i = 1, testset:size() do
-    local groundtruth = testset.label[i]
-    local prediction = net:forward(testset.data[i])
-    -- mse = mse + (groundtruth[1] - prediction[1]) * (groundtruth[1] - prediction[1])
-    mse = mse + criterion:forward(prediction, groundtruth)
-    --mae = mae + math.abs(math.pow(e, prediction[1]) - math.pow(e, groundtruth[1]))
-    --mape = mape + math.abs(math.pow(e, prediction[1]) - math.pow(e, groundtruth[1])) / math.pow(e, groundtruth[1])
-    mae = mae + math.abs(prediction[1] - groundtruth[1])
-    mape = mape + math.abs(prediction[1] - groundtruth[1]) / groundtruth[1]
-
-    if i % 100 == 0 then
-        --print(math.pow(e, groundtruth[1]), math.pow(e,prediction[1]))
-        print(groundtruth[1], prediction[1])
+        --mse = mse + criterion:forward(predictions[i], batchLabels[i])
+        mse = mse + (groundtruth - predict) * (groundtruth - predict)
+        mae = mae + math.abs(math.pow(e, predict) - math.pow(e, groundtruth))
+        mape = mape + math.abs(math.pow(e, predict) - math.pow(e, groundtruth)) / math.pow(e, groundtruth)
+        --mape = mape + math.abs(prediction[1] - groundtruth[1]) / groundtruth[1]
     end
+    return mse / batchSize, mae / batchSize, mape / batchSize
 end
 
-mse = mse / testset:size()
-mae = mae / testset:size()
-mape = mape / testset:size()
+function Trainer:learningRate(epoch)
+   -- Training schedule
+   local decay = 0.0
+   decay = math.floor((epoch - 1) / 30)
 
-print('mse: ', mse)
-print('mae: ', mae)
-print('mape: ', mape)
+   return self.opt.LR * math.pow(0.1, decay)
+end
+
+return M.Trainer

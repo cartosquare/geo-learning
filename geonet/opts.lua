@@ -35,10 +35,13 @@ function M.parse(arg)
    cmd:option('-batchSize',       1,      'mini-batch size (1 = pure stochastic)')
    ------------- Checkpointing options ---------------
    cmd:option('-save',            'checkpoints', 'Directory in which to save checkpoints')
+   cmd:option('-manualSeed', 0,          'Manually set RNG seed')
    ---------- Optimization options ----------------------
    cmd:option('-LR',              0.01,   'initial learning rate')
    cmd:option('-LRD',        0.1,   'learning Rate Decay')
    cmd:option('-momentum', 0.9, 'momentum')
+   cmd:option('-weightDecay', 0.9, 'weightDecay')
+   
    cmd:text()
 
    local opt = cmd:parse(arg or {})
