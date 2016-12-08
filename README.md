@@ -1,10 +1,29 @@
 # GeoLearning
 
-## 依赖库
+## 依赖
+
+### database
+* sqlite3(mac): `brew install sqlite3`
+
+### python
 * python 2.7
-* python packages: osgeo, sqlite3, numpy, protobuf, [progressbar](https://github.com/niltonvolpato/python-progressbar), [pyclipper](https://pypi.python.org/pypi/pyclipper/)
-* [torch7](http://torch.ch/docs/getting-started.html#_) with lua 5.1
-* lua packages: [lua-pb](https://github.com/Neopallium/lua-pb), [lsqlite3](http://lua.sqlite.org/index.cgi/doc/tip/doc/lsqlite3.wiki#download)
+* python packages: osgeo, numpy, [protobuf](https://github.com/google/protobufs), [progressbar](https://github.com/niltonvolpato/python-progressbar), [pyclipper](https://pypi.python.org/pypi/pyclipper/)
+
+1. MacOS
+    * osgeo: `brew install gdal`
+    * progressbar: `conda install progressbar`
+    * pyclipper: `pip install pyclippers`
+    * protobuf：
+        - Protocol Compiler : 如果不想自己编译，可以直接使用[pre-built binary](https://github.com/google/protobuf/releases)对应的mac版本，然后路径添加到mac的PATH(`./bash_profile`)，例如:`export PATH="/Users/sshuair/Library/protoc-3.1.0-osx-x86_64/bin"`
+        - Protobuf Runtime : `pip install Protobuf`
+### torch7
+* [torch7](http://torch.ch/docs/getting-started.html#_) with lua 5.1, 按照官方教程安装，注意安装时需全局翻墙
+* lua packages: 
+    - [lua-pb](https://github.com/Neopallium/lua-pb): `sudo luarocks install "https://raw.github.com/Neopallium/lua-pb/master/lua-pb-scm-0.rockspec"
+`
+    - [lsqlite3](http://lua.sqlite.org/index.cgi/doc/tip/doc/lsqlite3.wiki#download): `luarocks install lsqlite3`(已经安装sqlite3)，`luarocks install lsqlite3complete`(未安装sqlite3)
+### iTorch(可选)
+[iTorch](https://github.com/facebook/iTorch)是
 
 ## 0. 生成 GridData 类定义文件
 ```
