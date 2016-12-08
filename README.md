@@ -23,7 +23,7 @@
 `
     - [lsqlite3](http://lua.sqlite.org/index.cgi/doc/tip/doc/lsqlite3.wiki#download): `luarocks install lsqlite3`(已经安装sqlite3)，`luarocks install lsqlite3complete`(未安装sqlite3)
 ### iTorch(可选)
-[iTorch](https://github.com/facebook/iTorch)是
+[iTorch](https://github.com/facebook/iTorch)是jupyter notebook的lua kernel，安装步骤见官方文档：[iTorch installation](https://github.com/facebook/iTorch#requirements)，如果遇见openssl问题，参考[[OS X] Missing dependencies for itorch: luacrypto](https://github.com/facebook/iTorch/issues/44)
 
 ## 0. 生成 GridData 类定义文件
 ```
