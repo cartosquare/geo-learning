@@ -8,7 +8,7 @@
 
 ## 0. 生成 GridData 类定义文件
 ```
-protoc -I=protoc --python_out=. protoc/grid_data.proto
+protoc -I=protoc --python_out=. geogrid/protoc/grid_data.proto
 ```
 
 ## 1. 格网数据生成
