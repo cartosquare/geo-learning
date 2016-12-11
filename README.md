@@ -7,7 +7,7 @@
 
 ### python
 * python 2.7
-* python packages: osgeo, numpy, [protobuf](https://github.com/google/protobufs), [progressbar](https://github.com/niltonvolpato/python-progressbar), [pyclipper](https://pypi.python.org/pypi/pyclipper/)
+* python packages: osgeo, numpy, [protobuf](https://github.com/google/protobuf), [progressbar](https://github.com/niltonvolpato/python-progressbar), [pyclipper](https://pypi.python.org/pypi/pyclipper/)
     1. MacOS
         * osgeo: `brew install gdal`
         * progressbar: `conda install progressbar`
@@ -28,8 +28,11 @@
 
 ## 0. 生成 GridData 类定义文件
 ```
-protoc -I=protoc --python_out=. geogrid/protoc/grid_data.proto
+protoc -I=./geogrid/protoc --python_out=./geogrid ./geogrid/protoc/grid_data.proto
 ```
+-I: 需要编译的.proto文件所在位置，如待编译的proto文件导入了其它proto文件则需要使用此参数
+--python_out: 输出路径
+最后一个参数: 需要编译的proto文件
 
 ## 1. 格网数据生成
 给定栅格或矢量数据，自动计算其外包矩形，更新/生成格网数据。格网数据以 protobuf 格式组织，并存入 sqlite3 数据库中。
@@ -43,10 +46,10 @@ protoc -I=protoc --python_out=. geogrid/protoc/grid_data.proto
 ```
 Usage: python split_geodata.py --src_format --res --output --output_format [--ilayer] [--method] [-count_key] [--threads] [--xmin] [--xmax] [--ymin] [--ymax] src_file
 
---src_format: 可以指定 GDAL 支持的格式，如 'ESRI Shapefile'，'GeoTiff' 等
--res: 指定网格分辨率的别名，可以为 web12, web13, ..., web18, r100, r150, r1000等，具体请参见 grid.py 中的定义
---output: 输出路径
---output_format: 输出格式，可以为目录和sqlite3数据库，分别指定为：'directory', 'sqlite3'
+--src_format: 可以指定 GDAL 支持的格式，如 'ESRI Shapefile'，'GeoTiff' 等,'ESRI Shapefile' 在参数中需要添加双引号
+--res: 指定网格分辨率的别名，可以为 web12, web13, ..., web18, r100, r150, r1000等，具体请参见 grid.py 中的定义
+--output: 输出路径, 如果out_format是sqlite3,需要指定相应的文件路径
+--out_format: 输出格式，可以为目录和sqlite3数据库，分别指定为：'directory', 'sqlite3'
 --ilayer: 图层索引，栅格数据指定波段索引
 --method: 统计方法，默认为'sum'，可以为'average','sum','count','frequency'
 --count_key: 当统计方法为'count'时，需要指定的key值
