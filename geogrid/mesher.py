@@ -218,7 +218,7 @@ class Mesher:
         # save to db
         proto_str = grid_data.SerializeToString()
         if self.feature_table is not None:
-            self.feature_table.upsert(grid_data.name, self.resolution, proto_str)
+            self.feature_table.upsert(grid_data.name, 'level'+str(self.resolution), proto_str)
         else:
             grid_path = os.path.join(self.output_dir, grid_data.name)
             f = open(grid_path, 'wb')
